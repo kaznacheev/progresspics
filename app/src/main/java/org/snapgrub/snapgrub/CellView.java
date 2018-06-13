@@ -15,7 +15,6 @@ public class CellView extends View {
 
     private static final String TAG = "CellView";
 
-    private static final int BORDER_COLOR = 0xFF338833;
     private static final int TRANSPARENT = 0x00000000;
 
     private int mIndex;
@@ -106,7 +105,7 @@ public class CellView extends View {
     public void highlight(boolean on) {
         View parent = (View) getParent();
         if (on) {
-            parent.setBackgroundColor(BORDER_COLOR);
+            parent.setBackgroundColor(getResources().getColor(R.color.colorCellBorder, null));
         } else {
             parent.setBackgroundColor(TRANSPARENT);
         }

@@ -7,4 +7,5 @@
     <color name="colorActivityBackground">#A0A0A0</color>
     <color name="colorCollageBackground">#000000</color>
     <color name="colorBlankCell">#C0C0C0</color>
+    <color name="colorCellBorder">#3AEB1C</color>
 </resources>
