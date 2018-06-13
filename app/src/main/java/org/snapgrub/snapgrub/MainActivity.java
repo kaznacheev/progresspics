@@ -24,7 +24,6 @@ import android.view.ViewGroup;
 import android.widget.Toast;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -59,7 +58,7 @@ public class MainActivity extends AppCompatActivity {
     private ViewGroup mGridView;
     private int mActiveCellIndex;
 
-    private File mCaptureFile;
+    private Uri mCaptureUri;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -151,15 +150,15 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void snap() {
-        mCaptureFile = getNewFile(getFilesDir(), IMAGES_DIRECTORY, CAPTURE_PREFIX);
-        if (mCaptureFile == null) {
+        File file = getNewFile(getCacheDir(), IMAGES_DIRECTORY, CAPTURE_PREFIX);
+        if (file == null) {
             return;
         }
 
-        Uri outputUri = getUriForFile(this, AUTHORITY, mCaptureFile);
+        mCaptureUri = getUriForFile(this, AUTHORITY, file);
 
         Intent captureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-        captureIntent.putExtra(MediaStore.EXTRA_OUTPUT, outputUri);
+        captureIntent.putExtra(MediaStore.EXTRA_OUTPUT, mCaptureUri);
         captureIntent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION |
                 Intent.FLAG_GRANT_READ_URI_PERMISSION);
         try {
@@ -189,9 +188,7 @@ public class MainActivity extends AppCompatActivity {
         switch (requestCode) {
             case CAPTURE_REQUEST_CODE: {
                 try {
-                    InputStream input = new FileInputStream(mCaptureFile);
-                    Bitmap bitmap = BitmapFactory.decodeStream(input);
-                    getActiveCellView().setImage(bitmap);
+                    getActiveCellView().setImage(readScaledBitmap(mCaptureUri));
                     nextCell();
                 } catch (FileNotFoundException e) {
                     e.printStackTrace();
@@ -203,9 +200,7 @@ public class MainActivity extends AppCompatActivity {
                 Uri imageUri = data.getData();
                 if (imageUri != null) {
                     try {
-                        InputStream input = getContentResolver().openInputStream(imageUri);
-                        Bitmap bitmap = BitmapFactory.decodeStream(input);
-                        getActiveCellView().setImage(bitmap);
+                        getActiveCellView().setImage(readScaledBitmap(imageUri));
                         nextCell();
                     } catch (FileNotFoundException e) {
                         e.printStackTrace();
@@ -214,6 +209,11 @@ public class MainActivity extends AppCompatActivity {
                 break;
             }
         }
+    }
+
+    private Bitmap readScaledBitmap(Uri uri) throws FileNotFoundException {
+        InputStream input = getContentResolver().openInputStream(uri);
+        return BitmapFactory.decodeStream(input);
     }
 
     private void nextCell() {
