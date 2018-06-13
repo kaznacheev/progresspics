@@ -2,20 +2,34 @@ package org.snapgrub.snapgrub;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.Rect;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
 
-public class CellView extends LinearLayout {
+public class CellView extends View {
+
+    private static final String TAG = "CellView";
 
     private static final int BORDER_COLOR = 0xFF338833;
     private static final int TRANSPARENT = 0x00000000;
 
     private int mIndex;
+
     private int mRotation = 0;
+    private int mOffsetX = 0;
+    private int mOffsetY = 0;
+    private float mScale = 1;
+
+    Bitmap mBitmap;
+
+    private Paint mMarginPaint = new Paint();
+    private Paint mBlankPaint = new Paint();
+    private Rect mRect = new Rect();
 
     public CellView(Context context) {
         super(context);
@@ -48,6 +62,43 @@ public class CellView extends LinearLayout {
         return super.dispatchTouchEvent(ev);
     }
 
+    @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+
+        mMarginPaint.setStyle(Paint.Style.FILL);
+        mMarginPaint.setColor(getResources().getColor(R.color.colorCollageBackground , null));
+
+        mBlankPaint.setStyle(Paint.Style.FILL);
+        mBlankPaint.setColor(getResources().getColor(R.color.colorBlankCell , null));
+    }
+
+    @Override
+    protected void onDraw(Canvas canvas) {
+        int canvasWidth = getWidth();
+        int canvasHeight = getHeight();
+        mRect.set(0, 0, canvasWidth, canvasHeight);
+        if (mBitmap == null) {
+            canvas.drawRect(mRect, mBlankPaint);
+            return;
+        }
+
+        canvas.drawRect(mRect, mMarginPaint);
+
+        int bitmapWidth = mBitmap.getWidth();
+        int bitmapHeight = mBitmap.getHeight();
+        canvas.rotate(mRotation * 90, canvasWidth / 2, canvasHeight / 2);
+
+        float fitScaleX = canvasWidth * 1f / bitmapWidth;
+        float fitScaleY = canvasHeight * 1f / bitmapHeight;
+        float fitScale = Math.max(fitScaleX, fitScaleY);
+        canvas.scale(fitScale, fitScale, canvasWidth / 2, canvasHeight / 2);
+
+        Log.e(TAG, "onDraw canvas:" + mRect + ", bitmap:" + ((mBitmap != null)?(bitmapWidth + "x" + bitmapHeight): null));
+
+        canvas.drawBitmap(mBitmap, (canvasWidth - bitmapWidth) / 2, (canvasHeight - bitmapHeight) / 2, null);
+    }
+
     public void setIndex(int index) {
         mIndex = index;
     }
@@ -62,10 +113,9 @@ public class CellView extends LinearLayout {
     }
 
     public void setImage(Bitmap bitmap) {
-        getImageView().setImageBitmap(bitmap);
-        int colorId = bitmap != null ? R.color.colorCollageBackground : R.color.colorBlankCell;
-        setBackgroundColor(getResources().getColor(colorId, null));
-        getImageView().setRotation(0);
+        mBitmap = bitmap;
+        mRotation = 0;
+        invalidate();
     }
 
 
@@ -73,15 +123,9 @@ public class CellView extends LinearLayout {
         return (MainActivity) getContext();
     }
 
-    private ImageView getImageView() {
-        return (ImageView) getChildAt(0);
-    }
-
     public void rotateImage() {
-        mRotation += 90;
-        if (mRotation == 360) {
-            mRotation = 0;
-        }
-        getImageView().setRotation(mRotation);
+        mRotation++;
+        mRotation %= 4;
+        invalidate();
     }
 }
