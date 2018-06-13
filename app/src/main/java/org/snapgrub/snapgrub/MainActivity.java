@@ -4,7 +4,9 @@ import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
 import android.provider.MediaStore;
@@ -20,8 +22,10 @@ import android.view.ViewGroup;
 import android.widget.Toast;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -32,8 +36,9 @@ public class MainActivity extends AppCompatActivity {
     private static final String EXPORT_DIRECTORY = "SnapGrub";
     private static final String EXPORT_FILE_PREFIX = "snapgrub";
 
-    private static final int CAMERA_INTENT_REQUEST_CODE = 1;
-    private static final int PERMISSION_REQUEST_CODE = 2;
+    private static final int PERMISSION_REQUEST_CODE = 1;
+    private static final int CAMERA_INTENT_REQUEST_CODE = 2;
+    private static final int GALLERY_INTENT_REQUEST_CODE = 3;
 
     public static final int NUM_ROWS = 3;
     public static final int NUM_COLUMNS = 3;
@@ -50,6 +55,7 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.button_clear).setOnClickListener(v -> clear());
         findViewById(R.id.button_flip).setOnClickListener(v -> rotate());
         findViewById(R.id.button_snap).setOnClickListener(v -> snap());
+        findViewById(R.id.button_pick).setOnClickListener(v -> pick());
         findViewById(R.id.button_text).setOnClickListener(v -> text());
         findViewById(R.id.button_save).setOnClickListener(v -> save());
 
@@ -131,19 +137,51 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void snap() {
-        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-        if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
-            startActivityForResult(takePictureIntent, CAMERA_INTENT_REQUEST_CODE);
+        Intent captureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        captureIntent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION |
+                Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        if (captureIntent.resolveActivity(getPackageManager()) != null) {
+            startActivityForResult(captureIntent, CAMERA_INTENT_REQUEST_CODE);
+        }
+    }
+
+    private void pick() {
+        Intent pickIntent = new Intent(Intent.ACTION_PICK,
+                MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        if (pickIntent.resolveActivity(getPackageManager()) != null) {
+            startActivityForResult(pickIntent, GALLERY_INTENT_REQUEST_CODE);
         }
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == CAMERA_INTENT_REQUEST_CODE && resultCode == RESULT_OK) {
-            Bundle extras = data.getExtras();
-            Bitmap imageBitmap = (Bitmap) extras.get("data");
-            getActiveCell().setImage(imageBitmap);
-            nextCell();
+        if (resultCode != RESULT_OK) {
+            return;
+        }
+        switch (requestCode) {
+            case CAMERA_INTENT_REQUEST_CODE: {
+                Bundle extras = data.getExtras();
+                Bitmap imageBitmap = (Bitmap) extras.get("data");
+                getActiveCell().setImage(imageBitmap);
+                nextCell();
+                break;
+            }
+
+            case GALLERY_INTENT_REQUEST_CODE: {
+                Uri imageUri = data.getData();
+                Log.e(LOG_TAG, "URI:" + imageUri);
+                if (imageUri != null) {
+                    try {
+                        InputStream input = getContentResolver().openInputStream(imageUri);
+                        Bitmap bitmap = BitmapFactory.decodeStream(input);
+                        getActiveCell().setImage(bitmap);
+                        nextCell();
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    }
+                }
+                break;
+            }
         }
     }
 
