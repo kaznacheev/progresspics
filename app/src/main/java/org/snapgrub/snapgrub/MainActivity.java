@@ -39,7 +39,7 @@ public class MainActivity extends AppCompatActivity {
     public static final int NUM_COLUMNS = 3;
     public static final int NUM_CELLS = NUM_ROWS * NUM_COLUMNS;
 
-    private ViewGroup mCollageView;
+    private ViewGroup mGridView;
     private int mActiveCellIndex;
 
     @Override
@@ -53,7 +53,7 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.button_text).setOnClickListener(v -> text());
         findViewById(R.id.button_save).setOnClickListener(v -> save());
 
-        mCollageView = findViewById(R.id.collage);
+        mGridView = findViewById(R.id.grid);
 
         mActiveCellIndex = 0;
 
@@ -101,7 +101,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private CellView findCellView(int index) {
-        ViewGroup rowContainer = (ViewGroup) mCollageView.getChildAt(index / NUM_COLUMNS);
+        ViewGroup rowContainer = (ViewGroup) mGridView.getChildAt(index / NUM_COLUMNS);
         ViewGroup cellContainer = (ViewGroup) rowContainer.getChildAt(index % NUM_COLUMNS);
         return (CellView) cellContainer.getChildAt(0);
     }
@@ -161,10 +161,10 @@ public class MainActivity extends AppCompatActivity {
         if (!isExternalStorageWriteable()) {
             return;
         }
-        Bitmap bitmap = Bitmap.createBitmap(mCollageView.getWidth(), mCollageView.getHeight(), Bitmap.Config.ARGB_8888);
+        Bitmap bitmap = Bitmap.createBitmap(mGridView.getWidth(), mGridView.getHeight(), Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(bitmap);
         getActiveCell().highlight(false);
-        mCollageView.draw(canvas);
+        mGridView.draw(canvas);
         getActiveCell().highlight(true);
         writeBitmap(bitmap);
     }
