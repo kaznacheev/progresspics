@@ -1,6 +1,7 @@
 package org.snapgrub.snapgrub;
 
 import android.Manifest;
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -11,6 +12,7 @@ import android.os.Build;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -22,6 +24,7 @@ import android.view.ViewGroup;
 import android.widget.Toast;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -29,23 +32,34 @@ import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import static android.support.v4.content.FileProvider.getUriForFile;
+
 public class MainActivity extends AppCompatActivity {
 
     private static final String LOG_TAG = "SnapGrub";
 
     private static final String EXPORT_DIRECTORY = "SnapGrub";
-    private static final String EXPORT_FILE_PREFIX = "snapgrub";
+    private static final String EXPORT_PREFIX = "collage";
 
-    private static final int PERMISSION_REQUEST_CODE = 1;
-    private static final int CAMERA_INTENT_REQUEST_CODE = 2;
-    private static final int GALLERY_INTENT_REQUEST_CODE = 3;
+    private static final String CAPTURE_DIRECTORY = "images";
+    private static final String CAPTURE_PREFIX = "capture";
+
+    public static final String AUTHORITY = "org.snapgrub.snapgrub.fileprovider";
+
+    private static final int CAPTURE_REQUEST_CODE = 1;
+    private static final int PICK_REQUEST_CODE = 2;
+    private static final int SAVE_REQUEST_CODE = 3;
+    private static final int SHARE_REQUEST_CODE = 4;
 
     public static final int NUM_ROWS = 3;
     public static final int NUM_COLUMNS = 3;
     public static final int NUM_CELLS = NUM_ROWS * NUM_COLUMNS;
+    public static final int JPEG_QUALITY = 85;
 
     private ViewGroup mGridView;
     private int mActiveCellIndex;
+
+    private File mCaptureFile;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,6 +72,7 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.button_pick).setOnClickListener(v -> pick());
         findViewById(R.id.button_text).setOnClickListener(v -> text());
         findViewById(R.id.button_save).setOnClickListener(v -> save());
+        findViewById(R.id.button_share).setOnClickListener(v -> share());
 
         mGridView = findViewById(R.id.grid);
 
@@ -69,7 +84,6 @@ public class MainActivity extends AppCompatActivity {
         for (int i = 0; i != NUM_CELLS; i++) {
             final CellView cellView = findCellView(i);
             cellView.setIndex(i);
-            cellView.setImage(null);
             if (i == mActiveCellIndex) {
                 cellView.highlight(true);
             }
@@ -98,7 +112,7 @@ public class MainActivity extends AppCompatActivity {
                 text();
                 break;
             case R.id.action_clear:
-                getActiveCell().setImage(null);
+                getActiveCellView().setImage(null);
                 break;
             default:
                 return false;
@@ -112,7 +126,7 @@ public class MainActivity extends AppCompatActivity {
         return (CellView) cellContainer.getChildAt(0);
     }
 
-    private CellView getActiveCell() {
+    private CellView getActiveCellView() {
         return findCellView(mActiveCellIndex);
     }
 
@@ -120,9 +134,9 @@ public class MainActivity extends AppCompatActivity {
         if (mActiveCellIndex == index) {
             return;
         }
-        getActiveCell().highlight(false);
+        getActiveCellView().highlight(false);
         mActiveCellIndex = index;
-        getActiveCell().highlight(true);
+        getActiveCellView().highlight(true);
     }
 
     private void clear() {
@@ -133,48 +147,65 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void rotate() {
-        getActiveCell().rotateImage();
+        getActiveCellView().rotateImage();
     }
 
     public void snap() {
+        mCaptureFile = getNewFile(getFilesDir(), CAPTURE_DIRECTORY, CAPTURE_PREFIX);
+        if (mCaptureFile == null) {
+            return;
+        }
+
+        Uri outputUri = getUriForFile(this, AUTHORITY, mCaptureFile);
+
         Intent captureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        captureIntent.putExtra(MediaStore.EXTRA_OUTPUT, outputUri);
         captureIntent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION |
                 Intent.FLAG_GRANT_READ_URI_PERMISSION);
-        if (captureIntent.resolveActivity(getPackageManager()) != null) {
-            startActivityForResult(captureIntent, CAMERA_INTENT_REQUEST_CODE);
+        try {
+            startActivityForResult(captureIntent, CAPTURE_REQUEST_CODE);
+        } catch (ActivityNotFoundException e) {
+            reportError("Failed to resolve intent");
         }
     }
 
     private void pick() {
         Intent pickIntent = new Intent(Intent.ACTION_PICK,
                 MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-        if (pickIntent.resolveActivity(getPackageManager()) != null) {
-            startActivityForResult(pickIntent, GALLERY_INTENT_REQUEST_CODE);
+        try {
+            startActivityForResult(pickIntent, PICK_REQUEST_CODE);
+        } catch (ActivityNotFoundException e) {
+            reportError("Failed to resolve intent");
         }
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (resultCode != RESULT_OK) {
+            reportError("Intent failed: " + resultCode);
             return;
         }
+
         switch (requestCode) {
-            case CAMERA_INTENT_REQUEST_CODE: {
-                Bundle extras = data.getExtras();
-                Bitmap imageBitmap = (Bitmap) extras.get("data");
-                getActiveCell().setImage(imageBitmap);
-                nextCell();
+            case CAPTURE_REQUEST_CODE: {
+                try {
+                    InputStream input = new FileInputStream(mCaptureFile);
+                    Bitmap bitmap = BitmapFactory.decodeStream(input);
+                    getActiveCellView().setImage(bitmap);
+                    nextCell();
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                }
                 break;
             }
 
-            case GALLERY_INTENT_REQUEST_CODE: {
+            case PICK_REQUEST_CODE: {
                 Uri imageUri = data.getData();
-                Log.e(LOG_TAG, "URI:" + imageUri);
                 if (imageUri != null) {
                     try {
                         InputStream input = getContentResolver().openInputStream(imageUri);
                         Bitmap bitmap = BitmapFactory.decodeStream(input);
-                        getActiveCell().setImage(bitmap);
+                        getActiveCellView().setImage(bitmap);
                         nextCell();
                     } catch (FileNotFoundException e) {
                         e.printStackTrace();
@@ -196,73 +227,114 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void save() {
-        if (!isExternalStorageWriteable()) {
+        if (mustRequestStorageAccess(SAVE_REQUEST_CODE)) {
             return;
         }
-        Bitmap bitmap = Bitmap.createBitmap(mGridView.getWidth(), mGridView.getHeight(), Bitmap.Config.ARGB_8888);
-        Canvas canvas = new Canvas(bitmap);
-        getActiveCell().highlight(false);
-        mGridView.draw(canvas);
-        getActiveCell().highlight(true);
-        writeBitmap(bitmap);
+        File file = getNewFile(Environment.getExternalStoragePublicDirectory(
+                Environment.DIRECTORY_PICTURES), EXPORT_DIRECTORY, EXPORT_PREFIX);
+        if (file == null) {
+            return;
+        }
+        saveBitmap(createSnapshot(), file);
     }
 
-    private void writeBitmap(Bitmap bitmap) {
-        // Get the directory for the user's public pictures directory.
-        File dir = new File(Environment.getExternalStoragePublicDirectory(
-                Environment.DIRECTORY_PICTURES), EXPORT_DIRECTORY);
-        if (!dir.exists()) {
-            if (!dir.mkdirs()) {
-                Log.e(LOG_TAG, "Directory not created: " + dir);
-                Toast.makeText(this, "Cannot create directory", Toast.LENGTH_LONG).show();
-                return;
-            }
-        }
-        String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-        File file = new File(dir, EXPORT_FILE_PREFIX + "_" + timestamp + ".png");
-        try {
-            FileOutputStream fOut = new FileOutputStream(file);
-            bitmap.compress(Bitmap.CompressFormat.PNG, 85, fOut);
-            fOut.flush();
-            fOut.close();
-            Log.v(LOG_TAG, "Written " + file.toString());
-        } catch (IOException e) {
-            e.printStackTrace();
-            Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
+    private void share() {
+        if (mustRequestStorageAccess(SHARE_REQUEST_CODE)) {
+            return;
         }
 
+        File file = getNewFile(getFilesDir(), CAPTURE_DIRECTORY, EXPORT_PREFIX);
+        if (file == null) {
+            return;
+        }
+
+        saveBitmap(createSnapshot(), file);
+
+        Intent shareIntent = new Intent(Intent.ACTION_SEND);
+        shareIntent.setType("image/*");
+        shareIntent.putExtra(Intent.EXTRA_STREAM, getUriForFile(this, AUTHORITY, file));
+        shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        startActivity(Intent.createChooser(shareIntent, "Share to"));
     }
 
-    public  boolean isExternalStorageWriteable() {
+    public boolean mustRequestStorageAccess(int requestCode) {
         if (Build.VERSION.SDK_INT < 23) { //
             // permission is automatically granted on sdk<23 upon installation
-            Log.v(LOG_TAG,"Permission is already granted from manifest");
-            return true;
+            return false;
         }
 
         if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)
                 == PackageManager.PERMISSION_GRANTED) {
-            Log.v(LOG_TAG,"Permission is already granted");
-            return true;
+            return false;
         }
 
-        Log.v(LOG_TAG,"Requesting permission");
-        ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, PERMISSION_REQUEST_CODE);
-        return false;
+        ActivityCompat.requestPermissions(this,
+                new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, requestCode);
+        return true;
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        switch (requestCode) {
-            case PERMISSION_REQUEST_CODE:
-                Log.d(LOG_TAG, "External storage");
-                if(grantResults[0]== PackageManager.PERMISSION_GRANTED){
-                    Log.v(LOG_TAG,"Permission: " + permissions[0]+ " was " + grantResults[0]);
-                    //resume tasks needing this permission
+        if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            Log.v(LOG_TAG, "Permission: " + permissions[0] + " was " + grantResults[0]);
+            switch (requestCode) {
+                case SAVE_REQUEST_CODE:
                     save();
-                }
-                break;
+                    break;
+
+                case SHARE_REQUEST_CODE:
+                    share();
+                    break;
+            }
         }
+    }
+
+    @NonNull
+    private Bitmap createSnapshot() {
+        Bitmap bitmap = Bitmap.createBitmap(
+                mGridView.getWidth(), mGridView.getHeight(), Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        getActiveCellView().highlight(false);
+        mGridView.draw(canvas);
+        getActiveCellView().highlight(true);
+        return bitmap;
+    }
+
+    private void saveBitmap(Bitmap bitmap, File file) {
+        try {
+            FileOutputStream fOut = new FileOutputStream(file);
+            bitmap.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, fOut);
+            fOut.flush();
+            fOut.close();
+        } catch (IOException e) {
+            reportError(e.getMessage());
+        }
+    }
+
+    @Nullable
+    private File getNewFile(File root, String dirName, String filePrefix) {
+        File dir = new File(root, dirName);
+        if (!dir.exists() && !dir.mkdirs()) {
+            reportError("Failed to create " + dir);
+            return null;
+        }
+        File file = new File(dir, getTimestampedFileName(filePrefix));
+        if (file.exists() && !file.delete()) {
+            reportError("Failed to delete " + file);
+            return null;
+        }
+        return file;
+    }
+
+    @NonNull
+    private String getTimestampedFileName(String prefix) {
+        String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        return prefix + "_" + timestamp + ".jpg";
+    }
+
+    private void reportError(String message) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+        Log.e(LOG_TAG, message);
     }
 }
