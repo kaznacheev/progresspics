@@ -354,7 +354,9 @@ public class MainActivity extends AppCompatActivity {
             cellData.setTimestamp(timestamp);
 
             setActiveCellData(cellData);
-            getActiveCellView().bind(cellData);
+            CellView cellView = getActiveCellView();
+            cellData.scaleToFit(cellView.getWidth(), cellView.getHeight());
+            cellView.bind(cellData);
             nextCell();
         } catch (Exception e) {
             reportError(e.getMessage());

@@ -73,37 +73,36 @@ public class CellView extends View {
 
     @Override
     protected void onDraw(Canvas canvas) {
-        int canvasWidth = getWidth();
-        int canvasHeight = getHeight();
-        mRect.set(0, 0, canvasWidth, canvasHeight);
+        mRect.set(0, 0, getWidth(), getHeight());
         if (mData == null || mData.getBitmap() == null) {
             canvas.drawRect(mRect, mBlankPaint);
             return;
         }
 
-        Bitmap bitmap = mData.getBitmap();
         canvas.drawRect(mRect, mMarginPaint);
 
         canvas.save();
-        int bitmapWidth = bitmap.getWidth();
-        int bitmapHeight = bitmap.getHeight();
-        canvas.rotate(mData.getRotation() * 90, canvasWidth / 2, canvasHeight / 2);
-
-        float fitScaleX = canvasWidth * 1f / bitmapWidth;
-        float fitScaleY = canvasHeight * 1f / bitmapHeight;
-        float fitScale = Math.max(fitScaleX, fitScaleY);
-        canvas.scale(fitScale, fitScale, canvasWidth / 2, canvasHeight / 2);
-
-        Log.e(TAG, "onDraw canvas:" + mRect + ", bitmap:" + (bitmapWidth + "x" + bitmapHeight));
-
-        canvas.drawBitmap(bitmap, (canvasWidth - bitmapWidth) / 2, (canvasHeight - bitmapHeight) / 2, null);
+        drawBitmap(canvas);
         canvas.restore();
 
         String timestamp = mData.getTimestamp();
         if (timestamp == null) timestamp = "n/a";
         mTextPaint.getTextBounds(timestamp, 0, timestamp.length(), mRect);
         float margin = getResources().getDimensionPixelSize(R.dimen.timestampMargin);
-        canvas.drawText(timestamp, canvasWidth - margin - mRect.width(), margin + mRect.height(), mTextPaint);
+        canvas.drawText(timestamp, getWidth() - margin - mRect.width(), margin + mRect.height(), mTextPaint);
+    }
+
+    private void drawBitmap(Canvas canvas) {
+        final int viewPivotX = getWidth() / 2;
+        final int viewPivotY = getHeight() / 2;
+        canvas.rotate(mData.getRotation() * 90, viewPivotX, viewPivotY);
+
+        float scale = mData.getScale();
+        canvas.scale(scale, scale, viewPivotX, viewPivotY);
+
+        Log.e(TAG, "onDraw canvas:" + mRect + ", bitmap:" + mData.getBitmap().getWidth() + "x" + mData.getBitmap().getHeight());
+
+        canvas.drawBitmap(mData.getBitmap(), viewPivotX - mData.getPivotX(), viewPivotY - mData.getPivotY(), null);
     }
 
     public void bind(CellData data) {

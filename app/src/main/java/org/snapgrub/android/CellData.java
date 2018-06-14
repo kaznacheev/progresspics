@@ -7,10 +7,20 @@ import android.net.Uri;
 import android.os.Bundle;
 
 public class CellData {
+    private static final String KEY_URI = "uri";
+    private static final String KEY_TIMESTAMP = "timestamp";
+    private static final String KEY_ROTATION = "rotation";
+    private static final String KEY_PIVOT_X = "pivot_x";
+    private static final String KEY_PIVOT_Y = "pivot_y";
+    private static final String KEY_SCALE = "scale";
+
     private Uri mUri;
     private Bitmap mBitmap;
     private String mTimestamp;
     private int mRotation;
+    private int mPivotX;
+    private int mPivotY;
+    private float mScale;
 
     public CellData() {}
 
@@ -47,17 +57,42 @@ public class CellData {
         mRotation %= 4;
     }
 
+
+    public void scaleToFit(int width, int height) {
+        mPivotX = mBitmap.getWidth() / 2;
+        mPivotY = mBitmap.getHeight() / 2;
+        mScale = Math.max(width * 1f / mBitmap.getWidth(), height * 1f / mBitmap.getHeight());
+    }
+
+    public int getPivotX() {
+        return mPivotX;
+    }
+
+    public int getPivotY() {
+        return mPivotY;
+    }
+
+    public float getScale() {
+        return mScale;
+    }
+
     public void restoreState(Bundle b, ContentResolver contentResolver) {
-        load(b.getParcelable("uri"), contentResolver);
-        mRotation = b.getInt("rotation");
-        mTimestamp = b.getString("timestamp");
+        load(b.getParcelable(KEY_URI), contentResolver);
+        mTimestamp = b.getString(KEY_TIMESTAMP);
+        mRotation = b.getInt(KEY_ROTATION);
+        mPivotX = b.getInt(KEY_PIVOT_X);
+        mPivotY = b.getInt(KEY_PIVOT_Y);
+        mScale = b.getFloat(KEY_SCALE);
     }
 
     public Bundle toBundle() {
         Bundle b = new Bundle();
-        b.putParcelable("uri", mUri);
-        b.putString("timestamp", mTimestamp);
-        b.putInt("rotation", mRotation);
+        b.putParcelable(KEY_URI, mUri);
+        b.putString(KEY_TIMESTAMP, mTimestamp);
+        b.putInt(KEY_ROTATION, mRotation);
+        b.putInt(KEY_PIVOT_X, mPivotX);
+        b.putInt(KEY_PIVOT_Y, mPivotY);
+        b.putFloat(KEY_SCALE, mScale);
         return b;
     }
 }
