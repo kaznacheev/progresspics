@@ -50,12 +50,19 @@ public class MainActivity extends AppCompatActivity {
     private static final int SAVE_REQUEST_CODE = 3;
     private static final int SHARE_REQUEST_CODE = 4;
 
-    public static final int NUM_ROWS = 3;
-    public static final int NUM_COLUMNS = 3;
-    public static final int NUM_CELLS = NUM_ROWS * NUM_COLUMNS;
+    public static final int MAX_ROWS = 3;
+    public static final int MAX_COLUMNS = 3;
+    public static final int MAX_CELLS = MAX_ROWS * MAX_COLUMNS;
+
     public static final int JPEG_QUALITY = 85;
 
     private ViewGroup mGridView;
+
+    private CellData[] mCellData;
+    private CellView[] mCellView;
+
+    private int mActiveRows;
+    private int mActiveColumns;
     private int mActiveCellIndex;
 
     private Uri mCaptureUri;
@@ -73,27 +80,101 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.button_save).setOnClickListener(v -> save());
         findViewById(R.id.button_share).setOnClickListener(v -> share());
 
+        findViewById(R.id.layout3x3).setOnClickListener(v -> changeCellLayout(3, 3));
+        findViewById(R.id.layout3x2).setOnClickListener(v -> changeCellLayout(3, 2));
+        findViewById(R.id.layout2x3).setOnClickListener(v -> changeCellLayout(2, 3));
+
         mGridView = findViewById(R.id.grid);
 
+        mCellData = new CellData[MAX_CELLS];
+        for (int c = 0; c != MAX_CELLS; c++) {
+            mCellData[c] = new CellData();
+        }
+
+        mActiveRows = MAX_ROWS;
+        mActiveColumns = MAX_COLUMNS;
         mActiveCellIndex = 0;
 
         if (savedInstanceState != null) {
-            mActiveCellIndex = savedInstanceState.getInt("active", mActiveCellIndex);
+            restoreInstanceState(savedInstanceState);
         }
-        for (int i = 0; i != NUM_CELLS; i++) {
-            final CellView cellView = findCellView(i);
-            cellView.setIndex(i);
-            if (i == mActiveCellIndex) {
-                cellView.highlight(true);
+
+        setupCellLayout();
+    }
+
+    private void changeCellLayout(int rows, int columns) {
+        mActiveRows = rows;
+        mActiveColumns = columns;
+        setupCellLayout();
+    }
+
+    private void setupCellLayout() {
+        if (mCellView != null) {
+            mCellView[mActiveCellIndex].highlight(false);
+        }
+
+        mCellView = new CellView[mActiveRows * mActiveColumns];
+
+        int nextCellIndex = 0;
+
+        for (int r = 0; r != MAX_ROWS; r++) {
+            final boolean activeRow = r < mActiveRows;
+            final View row = mGridView.getChildAt(r);
+            if (activeRow) {
+                row.setVisibility(View.VISIBLE);
+            } else {
+                row.setVisibility(View.GONE);
             }
-            registerForContextMenu(cellView);
+
+            for (int c = 0; c != MAX_COLUMNS; c++) {
+                final boolean activeColumn = c < mActiveColumns;
+                View cellWrapper = ((ViewGroup) row).getChildAt(c);
+
+                final CellView cellView = (CellView)((ViewGroup) cellWrapper).getChildAt(0);
+                if (activeRow && activeColumn) {
+                    cellView.bind(mCellData[nextCellIndex]);
+                    mCellView[nextCellIndex++] = cellView;
+                    registerForContextMenu(cellView);
+                    cellWrapper.setVisibility(View.VISIBLE);
+                } else {
+                    cellView.bind(null);
+                    unregisterForContextMenu(cellView);
+                    cellWrapper.setVisibility(View.GONE);
+                }
+            }
+            mGridView.requestLayout();
         }
+
+        if (mActiveCellIndex >= mCellView.length) {
+            mActiveCellIndex = mCellView.length - 1;
+        }
+
+        mCellView[mActiveCellIndex].highlight(true);
     }
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
+        outState.putInt("rows", mActiveRows);
+        outState.putInt("columns", mActiveColumns);
         outState.putInt("active", mActiveCellIndex);
+
+        for (int c = 0; c != MAX_CELLS; c++) {
+            outState.putBundle("cell" + c, mCellData[c].toBundle());
+        }
+    }
+
+    private void restoreInstanceState(Bundle inState) {
+        mActiveRows = inState.getInt("rows", mActiveRows);
+        mActiveColumns = inState.getInt("columns", mActiveColumns);
+        mActiveCellIndex = inState.getInt("active", mActiveCellIndex);
+
+        for (int c = 0; c != MAX_CELLS; c++) {
+            Bundle b = inState.getBundle("cell" + c);
+            if (b != null) {
+                mCellData[c].restoreState(b, getContentResolver());
+            }
+        }
     }
 
     @Override
@@ -119,14 +200,8 @@ public class MainActivity extends AppCompatActivity {
         return super.onContextItemSelected(item);
     }
 
-    private CellView findCellView(int index) {
-        ViewGroup rowContainer = (ViewGroup) mGridView.getChildAt(index / NUM_COLUMNS);
-        ViewGroup cellContainer = (ViewGroup) rowContainer.getChildAt(index % NUM_COLUMNS);
-        return (CellView) cellContainer.getChildAt(0);
-    }
-
     private CellView getActiveCellView() {
-        return findCellView(mActiveCellIndex);
+        return mCellView[mActiveCellIndex];
     }
 
     public void activateCell(int index) {
@@ -138,11 +213,24 @@ public class MainActivity extends AppCompatActivity {
         getActiveCellView().highlight(true);
     }
 
-    private void clear() {
-        for (int i = 0; i != NUM_CELLS; i++) {
-            findCellView(i).setImage(null);
+    public void activateCell(CellView view) {
+        for (int c = 0; c != mCellView.length; c++) {
+            if (mCellView[c] == view) {
+                activateCell(c);
+                return;
+            }
         }
-        activateCell(0);
+        reportError("Cannot activate cell");
+    }
+
+    private void clear() {
+        for (int d = 0; d != mCellData.length; d++) {
+            mCellData[d] = new CellData();
+        }
+        for (int c = 0; c != mCellView.length; c++) {
+            mCellView[c].bind(mCellData[c]);
+        }
+        activateCell(mCellView[0]);
     }
 
     private void rotate() {
@@ -206,7 +294,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void nextCell() {
-        if (mActiveCellIndex < NUM_CELLS - 1) {
+        if (mActiveCellIndex < MAX_CELLS - 1) {
             activateCell(mActiveCellIndex + 1);
         }
     }

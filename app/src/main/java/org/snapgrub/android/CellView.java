@@ -18,8 +18,6 @@ public class CellView extends View {
 
     private static final int TRANSPARENT = 0x00000000;
 
-    private int mIndex;
-
     private int mRotation = 0;
 
     private Paint mMarginPaint = new Paint();
@@ -50,7 +48,7 @@ public class CellView extends View {
         final int action = ev.getActionMasked();
         switch(action) {
             case MotionEvent.ACTION_DOWN:
-                getMainActivity().activateCell(mIndex);
+                getMainActivity().activateCell(this);
                 break;
 
             case MotionEvent.ACTION_MOVE:
@@ -99,7 +97,7 @@ public class CellView extends View {
         float fitScale = Math.max(fitScaleX, fitScaleY);
         canvas.scale(fitScale, fitScale, canvasWidth / 2, canvasHeight / 2);
 
-        Log.e(TAG, "onDraw canvas:" + mRect + ", bitmap:" + ((bitmap != null)?(bitmapWidth + "x" + bitmapHeight): null));
+        Log.e(TAG, "onDraw canvas:" + mRect + ", bitmap:" + (bitmapWidth + "x" + bitmapHeight));
 
         canvas.drawBitmap(bitmap, (canvasWidth - bitmapWidth) / 2, (canvasHeight - bitmapHeight) / 2, null);
         canvas.restore();
@@ -110,8 +108,9 @@ public class CellView extends View {
         canvas.drawText(timestamp, canvasWidth - margin - mRect.width(), margin + mRect.height(), mTextPaint);
     }
 
-    public void setIndex(int index) {
-        mIndex = index;
+    public void bind(CellData data) {
+        mData = data;
+        invalidate();
     }
 
     public void highlight(boolean on) {
@@ -124,8 +123,7 @@ public class CellView extends View {
     }
 
     public boolean setImage(Uri uri) {
-        mData = new CellData();
-        mData.loadFromUri(uri, 512, getContext().getContentResolver());
+        mData.loadFromUri(uri, getContext().getContentResolver());
         mRotation = 0;
         invalidate();
         return mData.getBitmap() != null;

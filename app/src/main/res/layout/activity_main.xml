@@ -34,4 +34,12 @@
         <include layout="@layout/tools"/>
     </LinearLayout>
 
+    <LinearLayout
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        <include layout="@layout/tools2"/>
+    </LinearLayout>
+
 </android.support.constraint.ConstraintLayout>
