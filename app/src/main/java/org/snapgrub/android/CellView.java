@@ -2,20 +2,15 @@ package org.snapgrub.android;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
-import android.media.ExifInterface;
 import android.net.Uri;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
-
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 public class CellView extends View {
 
@@ -26,18 +21,13 @@ public class CellView extends View {
     private int mIndex;
 
     private int mRotation = 0;
-    private int mOffsetX = 0;
-    private int mOffsetY = 0;
-    private float mScale = 1;
-
-    Bitmap mBitmap;
 
     private Paint mMarginPaint = new Paint();
     private Paint mBlankPaint = new Paint();
     private Paint mTextPaint = new Paint();
 
     private Rect mRect = new Rect();
-    private String mTime;
+    private CellData mData;
 
     public CellView(Context context) {
         super(context);
@@ -91,16 +81,17 @@ public class CellView extends View {
         int canvasWidth = getWidth();
         int canvasHeight = getHeight();
         mRect.set(0, 0, canvasWidth, canvasHeight);
-        if (mBitmap == null) {
+        if (mData == null || mData.getBitmap() == null) {
             canvas.drawRect(mRect, mBlankPaint);
             return;
         }
 
+        Bitmap bitmap = mData.getBitmap();
         canvas.drawRect(mRect, mMarginPaint);
 
         canvas.save();
-        int bitmapWidth = mBitmap.getWidth();
-        int bitmapHeight = mBitmap.getHeight();
+        int bitmapWidth = bitmap.getWidth();
+        int bitmapHeight = bitmap.getHeight();
         canvas.rotate(mRotation * 90, canvasWidth / 2, canvasHeight / 2);
 
         float fitScaleX = canvasWidth * 1f / bitmapWidth;
@@ -108,14 +99,15 @@ public class CellView extends View {
         float fitScale = Math.max(fitScaleX, fitScaleY);
         canvas.scale(fitScale, fitScale, canvasWidth / 2, canvasHeight / 2);
 
-        Log.e(TAG, "onDraw canvas:" + mRect + ", bitmap:" + ((mBitmap != null)?(bitmapWidth + "x" + bitmapHeight): null));
+        Log.e(TAG, "onDraw canvas:" + mRect + ", bitmap:" + ((bitmap != null)?(bitmapWidth + "x" + bitmapHeight): null));
 
-        canvas.drawBitmap(mBitmap, (canvasWidth - bitmapWidth) / 2, (canvasHeight - bitmapHeight) / 2, null);
+        canvas.drawBitmap(bitmap, (canvasWidth - bitmapWidth) / 2, (canvasHeight - bitmapHeight) / 2, null);
         canvas.restore();
 
-        mTextPaint.getTextBounds(mTime, 0, mTime.length(), mRect);
+        String timestamp = mData.getTimestamp();
+        mTextPaint.getTextBounds(timestamp, 0, timestamp.length(), mRect);
         float margin = getResources().getDimensionPixelSize(R.dimen.timestampMargin);
-        canvas.drawText(mTime, canvasWidth - margin - mRect.width(), margin + mRect.height(), mTextPaint);
+        canvas.drawText(timestamp, canvasWidth - margin - mRect.width(), margin + mRect.height(), mTextPaint);
     }
 
     public void setIndex(int index) {
@@ -132,40 +124,11 @@ public class CellView extends View {
     }
 
     public boolean setImage(Uri uri) {
-        mBitmap = readScaledBitmap(uri);
+        mData = new CellData();
+        mData.loadFromUri(uri, 512, getContext().getContentResolver());
         mRotation = 0;
         invalidate();
-        return mBitmap != null;
-    }
-
-    private Bitmap readScaledBitmap(Uri uri) {
-        try {
-            ExifInterface exif = new ExifInterface(getContext().getContentResolver().openInputStream(uri));
-            String timestamp = exif.getAttribute(ExifInterface.TAG_DATETIME);
-            if (timestamp != null) {
-                mTime = timestamp.split(" ")[1].substring(0, 5);
-            } else {
-                mTime = new SimpleDateFormat("HH:mm").format(new Date());
-            }
-
-            int width = exif.getAttributeInt(ExifInterface.TAG_IMAGE_WIDTH, -1);
-            int height = exif.getAttributeInt(ExifInterface.TAG_IMAGE_LENGTH, -1);
-
-            BitmapFactory.Options bmOptions = new BitmapFactory.Options();
-            if (width <= 0 || height <= 0) {
-                bmOptions.inJustDecodeBounds = true;
-                BitmapFactory.decodeStream(getContext().getContentResolver().openInputStream(uri), null, bmOptions);
-                width = bmOptions.outWidth;
-                height = bmOptions.outHeight;
-            }
-
-            final int targetSize = 512;
-            bmOptions.inSampleSize = Math.min(width, height) / targetSize;
-            bmOptions.inJustDecodeBounds = false;
-            return BitmapFactory.decodeStream(getContext().getContentResolver().openInputStream(uri), null, bmOptions);
-        } catch (Exception ignore) {
-            return null;
-        }
+        return mData.getBitmap() != null;
     }
 
     private MainActivity getMainActivity() {
