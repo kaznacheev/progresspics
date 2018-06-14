@@ -5,7 +5,6 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
-import android.net.Uri;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -17,8 +16,6 @@ public class CellView extends View {
     private static final String TAG = "CellView";
 
     private static final int TRANSPARENT = 0x00000000;
-
-    private int mRotation = 0;
 
     private Paint mMarginPaint = new Paint();
     private Paint mBlankPaint = new Paint();
@@ -90,7 +87,7 @@ public class CellView extends View {
         canvas.save();
         int bitmapWidth = bitmap.getWidth();
         int bitmapHeight = bitmap.getHeight();
-        canvas.rotate(mRotation * 90, canvasWidth / 2, canvasHeight / 2);
+        canvas.rotate(mData.getRotation() * 90, canvasWidth / 2, canvasHeight / 2);
 
         float fitScaleX = canvasWidth * 1f / bitmapWidth;
         float fitScaleY = canvasHeight * 1f / bitmapHeight;
@@ -103,6 +100,7 @@ public class CellView extends View {
         canvas.restore();
 
         String timestamp = mData.getTimestamp();
+        if (timestamp == null) timestamp = "n/a";
         mTextPaint.getTextBounds(timestamp, 0, timestamp.length(), mRect);
         float margin = getResources().getDimensionPixelSize(R.dimen.timestampMargin);
         canvas.drawText(timestamp, canvasWidth - margin - mRect.width(), margin + mRect.height(), mTextPaint);
@@ -122,20 +120,7 @@ public class CellView extends View {
         }
     }
 
-    public boolean setImage(Uri uri) {
-        mData.loadFromUri(uri, getContext().getContentResolver());
-        mRotation = 0;
-        invalidate();
-        return mData.getBitmap() != null;
-    }
-
     private MainActivity getMainActivity() {
         return (MainActivity) getContext();
-    }
-
-    public void rotateImage() {
-        mRotation++;
-        mRotation %= 4;
-        invalidate();
     }
 }

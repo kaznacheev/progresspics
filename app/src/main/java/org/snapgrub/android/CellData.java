@@ -3,56 +3,25 @@ package org.snapgrub.android;
 import android.content.ContentResolver;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Bundle;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
-
 public class CellData {
-    private final static int SIZE_LIMIT = 512;
-
     private Uri mUri;
     private Bitmap mBitmap;
     private String mTimestamp;
+    private int mRotation;
 
+    public CellData() {}
 
-    public CellData() {
-
-    }
-
-    public void loadFromUri(Uri source, ContentResolver contentResolver) {
-        mUri = source;
+    public void load(Uri uri, ContentResolver resolver) {
+        mUri = uri;
         mBitmap = null;
-        mTimestamp = null;
         if (mUri == null) {
             return;
         }
-
         try {
-            ExifInterface exif = new ExifInterface(contentResolver.openInputStream(source));
-            String timestamp = exif.getAttribute(ExifInterface.TAG_DATETIME);
-            if (timestamp != null) {
-                mTimestamp = timestamp.split(" ")[1].substring(0, 5);
-            } else {
-                mTimestamp = new SimpleDateFormat("HH:mm").format(new Date());
-            }
-
-            int width = exif.getAttributeInt(ExifInterface.TAG_IMAGE_WIDTH, -1);
-            int height = exif.getAttributeInt(ExifInterface.TAG_IMAGE_LENGTH, -1);
-
-            BitmapFactory.Options bmOptions = new BitmapFactory.Options();
-            if (width <= 0 || height <= 0) {
-                bmOptions.inJustDecodeBounds = true;
-                BitmapFactory.decodeStream(contentResolver.openInputStream(source), null, bmOptions);
-                width = bmOptions.outWidth;
-                height = bmOptions.outHeight;
-            }
-
-            bmOptions.inSampleSize = Math.min(width, height) / SIZE_LIMIT;
-            bmOptions.inJustDecodeBounds = false;
-            mBitmap = BitmapFactory.decodeStream(contentResolver.openInputStream(source), null, bmOptions);
+            mBitmap = BitmapFactory.decodeStream(resolver.openInputStream(mUri));
         } catch (Exception ignore) {
         }
     }
@@ -65,13 +34,30 @@ public class CellData {
         return mTimestamp;
     }
 
+    public void setTimestamp(String timestamp) {
+        mTimestamp = timestamp;
+    }
+
+    public int getRotation() {
+        return mRotation;
+    }
+
+    public void rotate() {
+        mRotation++;
+        mRotation %= 4;
+    }
+
     public void restoreState(Bundle b, ContentResolver contentResolver) {
-        loadFromUri(b.getParcelable("uri"), contentResolver);
+        load(b.getParcelable("uri"), contentResolver);
+        mRotation = b.getInt("rotation");
+        mTimestamp = b.getString("timestamp");
     }
 
     public Bundle toBundle() {
         Bundle b = new Bundle();
         b.putParcelable("uri", mUri);
+        b.putString("timestamp", mTimestamp);
+        b.putInt("rotation", mRotation);
         return b;
     }
 }

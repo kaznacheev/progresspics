@@ -2,10 +2,13 @@ package org.snapgrub.android;
 
 import android.Manifest;
 import android.content.ActivityNotFoundException;
+import android.content.ContentResolver;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
@@ -42,6 +45,9 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String SHARE_DIRECTORY = "share";
     private static final String SHARE_PREFIX = "share";
+
+    public static final String IMPORT_DIRECTORY = "import";
+    public static final String IMPORT_PREFIX = "import";
 
     public static final String AUTHORITY = "org.snapgrub.android.fileprovider";
 
@@ -191,13 +197,24 @@ public class MainActivity extends AppCompatActivity {
             case R.id.action_text:
                 text();
                 break;
-            case R.id.action_clear:
-                getActiveCellView().setImage(null);
+            case R.id.action_clear: {
+                CellData cellData = new CellData();
+                setActiveCellData(cellData);
+                getActiveCellView().bind(cellData);
                 break;
+            }
             default:
                 return false;
         }
         return super.onContextItemSelected(item);
+    }
+
+    private void setActiveCellData(CellData cellData) {
+        mCellData[mActiveCellIndex] = cellData;
+    }
+
+    private CellData getActiveCellData() {
+        return mCellData[mActiveCellIndex];
     }
 
     private CellView getActiveCellView() {
@@ -234,7 +251,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void rotate() {
-        getActiveCellView().rotateImage();
+        getActiveCellData().rotate();
+        getActiveCellView().invalidate();
     }
 
     public void snap() {
@@ -275,26 +293,77 @@ public class MainActivity extends AppCompatActivity {
 
         switch (requestCode) {
             case CAPTURE_REQUEST_CODE: {
-                if (getActiveCellView().setImage(mCaptureUri)) {
-                    nextCell();
-                }
+                importImage(mCaptureUri);
                 break;
             }
 
             case PICK_REQUEST_CODE: {
-                Uri imageUri = data.getData();
-                if (imageUri != null) {
-                    if (getActiveCellView().setImage(imageUri)) {
-                        nextCell();
-                    }
-                }
+                importImage(data.getData());
                 break;
             }
         }
     }
 
+    private void importImage(Uri source) {
+        if (source == null) {
+            return;
+        }
+        try {
+            final ContentResolver resolver = getContentResolver();
+
+            final ExifInterface exif = new ExifInterface(resolver.openInputStream(source));
+
+            String timestamp = exif.getAttribute(ExifInterface.TAG_DATETIME);
+            if (timestamp != null) {
+                timestamp = timestamp.split(" ")[1].substring(0, 5);
+            } else {
+                timestamp = new SimpleDateFormat("HH:mm").format(new Date());
+            }
+
+            int width = exif.getAttributeInt(ExifInterface.TAG_IMAGE_WIDTH, -1);
+            int height = exif.getAttributeInt(ExifInterface.TAG_IMAGE_LENGTH, -1);
+
+            BitmapFactory.Options bmOptions = new BitmapFactory.Options();
+            if (width <= 0 || height <= 0) {
+                bmOptions.inJustDecodeBounds = true;
+                BitmapFactory.decodeStream(resolver.openInputStream(source), null, bmOptions);
+                width = bmOptions.outWidth;
+                height = bmOptions.outHeight;
+            }
+
+            int SIZE_LIMIT = 1024;
+            bmOptions.inSampleSize = Math.min(width, height) / SIZE_LIMIT;
+            bmOptions.inJustDecodeBounds = false;
+            Bitmap bitmap = BitmapFactory.decodeStream(resolver.openInputStream(source), null, bmOptions);
+            if (bitmap == null) {
+                return;
+            }
+
+            File file = getNewFile(getCacheDir(), IMPORT_DIRECTORY, IMPORT_PREFIX);
+            if (file == null) {
+                return;
+            }
+
+            saveBitmap(bitmap, file);
+
+            CellData cellData = new CellData();
+            cellData.load(getUriForFile(this, AUTHORITY, file), getContentResolver());
+            if (cellData.getBitmap() == null) {
+                return;
+            }
+            cellData.setTimestamp(timestamp);
+
+            setActiveCellData(cellData);
+            getActiveCellView().bind(cellData);
+            nextCell();
+        } catch (Exception e) {
+            reportError(e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
     private void nextCell() {
-        if (mActiveCellIndex < MAX_CELLS - 1) {
+        if (mActiveCellIndex < mCellView.length - 1) {
             activateCell(mActiveCellIndex + 1);
         }
     }
@@ -386,6 +455,7 @@ public class MainActivity extends AppCompatActivity {
             fOut.close();
         } catch (IOException e) {
             reportError(e.getMessage());
+            e.printStackTrace();
         }
     }
 
