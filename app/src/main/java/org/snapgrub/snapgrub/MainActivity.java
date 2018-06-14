@@ -5,7 +5,6 @@ import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.net.Uri;
 import android.os.Build;
@@ -24,10 +23,8 @@ import android.view.ViewGroup;
 import android.widget.Toast;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -190,11 +187,8 @@ public class MainActivity extends AppCompatActivity {
 
         switch (requestCode) {
             case CAPTURE_REQUEST_CODE: {
-                try {
-                    getActiveCellView().setImage(readScaledBitmap(mCaptureUri));
+                if (getActiveCellView().setImage(mCaptureUri)) {
                     nextCell();
-                } catch (FileNotFoundException e) {
-                    e.printStackTrace();
                 }
                 break;
             }
@@ -202,28 +196,13 @@ public class MainActivity extends AppCompatActivity {
             case PICK_REQUEST_CODE: {
                 Uri imageUri = data.getData();
                 if (imageUri != null) {
-                    try {
-                        getActiveCellView().setImage(readScaledBitmap(imageUri));
+                    if (getActiveCellView().setImage(imageUri)) {
                         nextCell();
-                    } catch (FileNotFoundException e) {
-                        e.printStackTrace();
                     }
                 }
                 break;
             }
         }
-    }
-
-    private Bitmap readScaledBitmap(Uri uri) throws FileNotFoundException {
-        BitmapFactory.Options bmOptions = new BitmapFactory.Options();
-        bmOptions.inJustDecodeBounds = true;
-        BitmapFactory.decodeStream(getContentResolver().openInputStream(uri), null, bmOptions);
-
-        bmOptions.inJustDecodeBounds = false;
-        int targetSize = 512;
-        bmOptions.inSampleSize = Math.min(
-                bmOptions.outWidth / targetSize, bmOptions.outHeight / targetSize);
-        return BitmapFactory.decodeStream(getContentResolver().openInputStream(uri), null, bmOptions);
     }
 
     private void nextCell() {
