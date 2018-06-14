@@ -3,6 +3,7 @@ package org.snapgrub.android;
 import android.content.ContentResolver;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Point;
 import android.net.Uri;
 import android.os.Bundle;
 
@@ -80,9 +81,34 @@ public class CellData {
         return mScale;
     }
 
-    public void movePivotBy(float screenOffsetX, float screenOffsetY) {
-        mPivotX -= (int)(screenOffsetX / mScale);
-        mPivotY -= (int)(screenOffsetY / mScale);
+    public void computeOffset(Point outImageOffset, float screenOffsetX, float screenOffsetY) {
+        final int imageX = (int) (screenOffsetX / mScale);
+        final int imageY = (int) (screenOffsetY / mScale);
+
+        switch (mRotation) {
+            case 0:
+                outImageOffset.set(imageX, imageY);
+                break;
+
+            case 1:
+                //noinspection SuspiciousNameCombination
+                outImageOffset.set(imageY, -imageX);
+                break;
+
+            case 2:
+                outImageOffset.set(-imageX, -imageY);
+                break;
+
+            case 3:
+                //noinspection SuspiciousNameCombination
+                outImageOffset.set(-imageY, imageX);
+                break;
+        }
+    }
+
+    public void applyOffset(Point offset) {
+        mPivotX += offset.x;
+        mPivotY += offset.y;
     }
 
     public void restoreState(Bundle b, ContentResolver contentResolver) {

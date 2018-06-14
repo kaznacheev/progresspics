@@ -1,9 +1,9 @@
 package org.snapgrub.android;
 
 import android.content.Context;
-import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.Point;
 import android.graphics.Rect;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
@@ -26,8 +26,7 @@ public class CellView extends View {
 
     private float mDownX;
     private float mDownY;
-    private float mDragOffsetX;
-    private float mDragOffsetY;
+    private Point mDragOffset = new Point();
 
     public CellView(Context context) {
         super(context);
@@ -56,31 +55,27 @@ public class CellView extends View {
                 getMainActivity().activateCell(this);
                 mDownX = x;
                 mDownY = y;
-                mDragOffsetX = 0;
-                mDragOffsetY = 0;
+                mDragOffset.set(0, 0);
                 break;
 
             case MotionEvent.ACTION_MOVE:
                 if (mData.hasImage()) {
-                    mDragOffsetX = x - mDownX;
-                    mDragOffsetY = y - mDownY;
+                    mData.computeOffset(mDragOffset, mDownX - x, mDownY - y);
                     invalidate();
                 }
                 break;
 
             case MotionEvent.ACTION_UP:
                 if (mData.hasImage()) {
-                    mData.movePivotBy(mDragOffsetX, mDragOffsetY);
-                    mDragOffsetX = 0;
-                    mDragOffsetY = 0;
+                    mData.applyOffset(mDragOffset);
+                    mDragOffset.set(0, 0);
                     invalidate();
                 }
                 break;
 
             case MotionEvent.ACTION_CANCEL:
                 if (mData.hasImage()) {
-                    mDragOffsetX = 0;
-                    mDragOffsetY = 0;
+                    mDragOffset.set(0, 0);
                     invalidate();
                 }
                 break;
@@ -137,8 +132,11 @@ public class CellView extends View {
 
         Log.e(TAG, "onDraw canvas:" + mRect + ", bitmap:" + mData.getBitmap().getWidth() + "x" + mData.getBitmap().getHeight());
 
-        canvas.drawBitmap(mData.getBitmap(), viewPivotX - mData.getPivotX() + mDragOffsetX / scale,
-                viewPivotY - mData.getPivotY() + mDragOffsetY / scale, null);
+        canvas.drawBitmap(
+                mData.getBitmap(),
+                viewPivotX - (mData.getPivotX() + mDragOffset.x),
+                viewPivotY - (mData.getPivotY() + mDragOffset.y),
+                null);
     }
 
     public void bind(CellData data) {
