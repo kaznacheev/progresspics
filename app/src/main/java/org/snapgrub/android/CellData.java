@@ -40,6 +40,10 @@ public class CellData {
         return mBitmap;
     }
 
+    public boolean hasImage() {
+        return mBitmap != null;
+    }
+
     public String getTimestamp() {
         return mTimestamp;
     }
@@ -74,6 +78,11 @@ public class CellData {
 
     public float getScale() {
         return mScale;
+    }
+
+    public void movePivotBy(float screenOffsetX, float screenOffsetY) {
+        mPivotX -= (int)(screenOffsetX / mScale);
+        mPivotY -= (int)(screenOffsetY / mScale);
     }
 
     public void restoreState(Bundle b, ContentResolver contentResolver) {

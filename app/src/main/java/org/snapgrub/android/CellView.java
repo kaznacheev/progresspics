@@ -24,6 +24,11 @@ public class CellView extends View {
     private Rect mRect = new Rect();
     private CellData mData;
 
+    private float mDownX;
+    private float mDownY;
+    private float mDragOffsetX;
+    private float mDragOffsetY;
+
     public CellView(Context context) {
         super(context);
     }
@@ -43,13 +48,43 @@ public class CellView extends View {
     @Override
     public boolean dispatchTouchEvent(MotionEvent ev) {
         final int action = ev.getActionMasked();
+        float x = (int) ev.getX();
+        float y = (int) ev.getY();
+
         switch(action) {
             case MotionEvent.ACTION_DOWN:
                 getMainActivity().activateCell(this);
+                mDownX = x;
+                mDownY = y;
+                mDragOffsetX = 0;
+                mDragOffsetY = 0;
                 break;
 
             case MotionEvent.ACTION_MOVE:
+                if (mData.hasImage()) {
+                    mDragOffsetX = x - mDownX;
+                    mDragOffsetY = y - mDownY;
+                    invalidate();
+                }
                 break;
+
+            case MotionEvent.ACTION_UP:
+                if (mData.hasImage()) {
+                    mData.movePivotBy(mDragOffsetX, mDragOffsetY);
+                    mDragOffsetX = 0;
+                    mDragOffsetY = 0;
+                    invalidate();
+                }
+                break;
+
+            case MotionEvent.ACTION_CANCEL:
+                if (mData.hasImage()) {
+                    mDragOffsetX = 0;
+                    mDragOffsetY = 0;
+                    invalidate();
+                }
+                break;
+
         }
 
         return super.dispatchTouchEvent(ev);
@@ -74,7 +109,7 @@ public class CellView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         mRect.set(0, 0, getWidth(), getHeight());
-        if (mData == null || mData.getBitmap() == null) {
+        if (mData == null || !mData.hasImage()) {
             canvas.drawRect(mRect, mBlankPaint);
             return;
         }
@@ -102,7 +137,8 @@ public class CellView extends View {
 
         Log.e(TAG, "onDraw canvas:" + mRect + ", bitmap:" + mData.getBitmap().getWidth() + "x" + mData.getBitmap().getHeight());
 
-        canvas.drawBitmap(mData.getBitmap(), viewPivotX - mData.getPivotX(), viewPivotY - mData.getPivotY(), null);
+        canvas.drawBitmap(mData.getBitmap(), viewPivotX - mData.getPivotX() + mDragOffsetX / scale,
+                viewPivotY - mData.getPivotY() + mDragOffsetY / scale, null);
     }
 
     public void bind(CellData data) {

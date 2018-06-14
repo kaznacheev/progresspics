@@ -19,8 +19,6 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.ContextMenu;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
@@ -140,11 +138,10 @@ public class MainActivity extends AppCompatActivity {
                 if (activeRow && activeColumn) {
                     cellView.bind(mCellData[nextCellIndex]);
                     mCellView[nextCellIndex++] = cellView;
-                    registerForContextMenu(cellView);
                     cellWrapper.setVisibility(View.VISIBLE);
+                    cellView.setClickable(true);
                 } else {
                     cellView.bind(null);
-                    unregisterForContextMenu(cellView);
                     cellWrapper.setVisibility(View.GONE);
                 }
             }
@@ -181,32 +178,6 @@ public class MainActivity extends AppCompatActivity {
                 mCellData[c].restoreState(b, getContentResolver());
             }
         }
-    }
-
-    @Override
-    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
-        getMenuInflater().inflate(R.menu.context, menu);
-    }
-
-    @Override
-    public boolean onContextItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.action_snap:
-                snap();
-                break;
-            case R.id.action_text:
-                text();
-                break;
-            case R.id.action_clear: {
-                CellData cellData = new CellData();
-                setActiveCellData(cellData);
-                getActiveCellView().bind(cellData);
-                break;
-            }
-            default:
-                return false;
-        }
-        return super.onContextItemSelected(item);
     }
 
     private void setActiveCellData(CellData cellData) {
@@ -348,7 +319,7 @@ public class MainActivity extends AppCompatActivity {
 
             CellData cellData = new CellData();
             cellData.load(getUriForFile(this, AUTHORITY, file), getContentResolver());
-            if (cellData.getBitmap() == null) {
+            if (!cellData.hasImage()) {
                 return;
             }
             cellData.setTimestamp(timestamp);
