@@ -40,8 +40,11 @@ public class MainActivity extends AppCompatActivity {
     private static final String EXPORT_DIRECTORY = "SnapGrub";
     private static final String EXPORT_PREFIX = "collage";
 
-    private static final String IMAGES_DIRECTORY = "images";
+    private static final String CAPTURE_DIRECTORY = "capture";
     private static final String CAPTURE_PREFIX = "capture";
+
+    private static final String SHARE_DIRECTORY = "share";
+    private static final String SHARE_PREFIX = "share";
 
     public static final String AUTHORITY = "org.snapgrub.snapgrub.fileprovider";
 
@@ -150,7 +153,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void snap() {
-        File file = getNewFile(getCacheDir(), IMAGES_DIRECTORY, CAPTURE_PREFIX);
+        File file = getNewFile(getFilesDir(), CAPTURE_DIRECTORY, CAPTURE_PREFIX);
         if (file == null) {
             return;
         }
@@ -250,7 +253,7 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        File file = getNewFile(getCacheDir(), IMAGES_DIRECTORY, EXPORT_PREFIX);
+        File file = getNewFile(getCacheDir(), SHARE_DIRECTORY, SHARE_PREFIX);
         if (file == null) {
             return;
         }
