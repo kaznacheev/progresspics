@@ -212,8 +212,15 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private Bitmap readScaledBitmap(Uri uri) throws FileNotFoundException {
-        InputStream input = getContentResolver().openInputStream(uri);
-        return BitmapFactory.decodeStream(input);
+        BitmapFactory.Options bmOptions = new BitmapFactory.Options();
+        bmOptions.inJustDecodeBounds = true;
+        BitmapFactory.decodeStream(getContentResolver().openInputStream(uri), null, bmOptions);
+
+        bmOptions.inJustDecodeBounds = false;
+        int targetSize = 512;
+        bmOptions.inSampleSize = Math.min(
+                bmOptions.outWidth / targetSize, bmOptions.outHeight / targetSize);
+        return BitmapFactory.decodeStream(getContentResolver().openInputStream(uri), null, bmOptions);
     }
 
     private void nextCell() {
