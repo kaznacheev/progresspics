@@ -1,4 +1,4 @@
-package org.snapgrub.snapgrub;
+package org.snapgrub.android;
 
 import org.junit.Test;
 

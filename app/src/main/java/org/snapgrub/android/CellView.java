@@ -1,4 +1,4 @@
-package org.snapgrub.snapgrub;
+package org.snapgrub.android;
 
 import android.content.Context;
 import android.graphics.Bitmap;

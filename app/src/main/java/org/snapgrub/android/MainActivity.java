@@ -1,4 +1,4 @@
-package org.snapgrub.snapgrub;
+package org.snapgrub.android;
 
 import android.Manifest;
 import android.content.ActivityNotFoundException;
@@ -43,7 +43,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String SHARE_DIRECTORY = "share";
     private static final String SHARE_PREFIX = "share";
 
-    public static final String AUTHORITY = "org.snapgrub.snapgrub.fileprovider";
+    public static final String AUTHORITY = "org.snapgrub.android.fileprovider";
 
     private static final int CAPTURE_REQUEST_CODE = 1;
     private static final int PICK_REQUEST_CODE = 2;

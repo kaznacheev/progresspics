@@ -1,4 +1,4 @@
-package org.snapgrub.snapgrub;
+package org.snapgrub.android;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;
@@ -21,6 +21,6 @@ public class ExampleInstrumentedTest {
         // Context of the app under test.
         Context appContext = InstrumentationRegistry.getTargetContext();
 
-        assertEquals("org.snapgrub.snapgrub", appContext.getPackageName());
+        assertEquals("org.snapgrub.android", appContext.getPackageName());
     }
 }
