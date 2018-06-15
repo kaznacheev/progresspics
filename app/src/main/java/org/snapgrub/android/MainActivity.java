@@ -2,6 +2,7 @@ package org.snapgrub.android;
 
 import android.Manifest;
 import android.content.ActivityNotFoundException;
+import android.content.ClipData;
 import android.content.ContentResolver;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -28,7 +29,11 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
+import java.util.List;
 
 import static android.support.v4.content.FileProvider.getUriForFile;
 
@@ -253,6 +258,7 @@ public class MainActivity extends AppCompatActivity {
     private void pick() {
         Intent pickIntent = new Intent(Intent.ACTION_PICK,
                 MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        pickIntent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
         try {
             startActivityForResult(pickIntent, PICK_REQUEST_CODE);
         } catch (ActivityNotFoundException e) {
@@ -269,21 +275,31 @@ public class MainActivity extends AppCompatActivity {
 
         switch (requestCode) {
             case CAPTURE_REQUEST_CODE: {
-                importImage(mCaptureUri);
+                importImages(Collections.singletonList(mCaptureUri));
                 break;
             }
 
             case PICK_REQUEST_CODE: {
-                importImage(data.getData());
+                ClipData clipData = data.getClipData();
+                if (clipData != null) {
+                    List<Uri> uris = new ArrayList<>();
+                    for (int i = 0; i != clipData.getItemCount(); i++) {
+                        Uri uri = clipData.getItemAt(i).getUri();
+                        if (uri != null) {
+                            uris.add(uri);
+                        }
+                    }
+                    importImages(uris);
+                } else if (data.getData() != null) {
+                    importImages(Collections.singletonList(data.getData()));
+                }
                 break;
             }
         }
     }
 
-    private void importImage(Uri source) {
-        if (source == null) {
-            return;
-        }
+    @Nullable
+    private CellData loadCell(Uri source) {
         try {
             final ContentResolver resolver = getContentResolver();
 
@@ -291,6 +307,7 @@ public class MainActivity extends AppCompatActivity {
 
             String timestamp = exif.getAttribute(ExifInterface.TAG_DATETIME);
             if (timestamp == null) {
+                Log.e("VLAD", "No timestamp found in the photo");
                 timestamp = new SimpleDateFormat("YYYY:MM:dd HH:mm:ss").format(new Date());
             }
 
@@ -310,12 +327,12 @@ public class MainActivity extends AppCompatActivity {
             bmOptions.inJustDecodeBounds = false;
             Bitmap bitmap = BitmapFactory.decodeStream(resolver.openInputStream(source), null, bmOptions);
             if (bitmap == null) {
-                return;
+                return null;
             }
 
             File file = getNewFile(getCacheDir(), IMPORT_DIRECTORY, IMPORT_PREFIX);
             if (file == null) {
-                return;
+                return null;
             }
 
             saveBitmap(bitmap, file);
@@ -323,20 +340,39 @@ public class MainActivity extends AppCompatActivity {
             CellData cellData = new CellData();
             cellData.load(getUriForFile(this, AUTHORITY, file), getContentResolver());
             if (!cellData.hasImage()) {
-                return;
+                return null;
             }
             cellData.setTimestamp(timestamp);
+            return cellData;
+        } catch (Exception e) {
+            reportError(e.getMessage());
+            e.printStackTrace();
+            return null;
+        }
+    }
 
+    private void importImages(List<Uri> uris) {
+        List<CellData> cells = new ArrayList<>();
+        for (Uri uri : uris) {
+            CellData cell = loadCell(uri);
+            if (cell != null) {
+                cells.add(cell);
+            }
+        }
+
+        cells.sort(Comparator.comparing(CellData::getTimestamp));
+
+        for (CellData cellData : cells) {
             setActiveCellData(cellData);
             CellView cellView = getActiveCellView();
             cellData.scaleToFit(cellView.getWidth(), cellView.getHeight());
             cellView.bind(cellData);
+            if (mActiveCellIndex == mCellView.length - 1) {
+                break;
+            }
             nextCell();
-            updateDate();
-        } catch (Exception e) {
-            reportError(e.getMessage());
-            e.printStackTrace();
         }
+        updateDate();
     }
 
     private void updateDate() {
