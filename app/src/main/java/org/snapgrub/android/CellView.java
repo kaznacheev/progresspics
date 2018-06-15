@@ -26,7 +26,9 @@ public class CellView extends View {
 
     private float mDownX;
     private float mDownY;
-    private Point mDragOffset = new Point();
+    private float mDownX2;
+    private float mDownY2;
+    private Point mDragOffset;
 
     public CellView(Context context) {
         super(context);
@@ -46,6 +48,7 @@ public class CellView extends View {
 
     @Override
     public boolean dispatchTouchEvent(MotionEvent ev) {
+        Log.e("VLAD", ev.toString());
         final int action = ev.getActionMasked();
         float x = (int) ev.getX();
         float y = (int) ev.getY();
@@ -53,29 +56,52 @@ public class CellView extends View {
         switch(action) {
             case MotionEvent.ACTION_DOWN:
                 getMainActivity().activateCell(this);
-                mDownX = x;
-                mDownY = y;
-                mDragOffset.set(0, 0);
+                if (mData.hasImage()) {
+                    mDownX = x;
+                    mDownY = y;
+                    mDragOffset = new Point(0, 0);
+                }
+                break;
+
+            case MotionEvent.ACTION_POINTER_DOWN:
+                if (mDragOffset != null) {
+                    mDragOffset = null;
+                    invalidate();
+                }
+                if (ev.getPointerCount() == 2) {
+                    mDownX2 = ev.getX(1);
+                    mDownY2 = ev.getX(1);
+                }
                 break;
 
             case MotionEvent.ACTION_MOVE:
-                if (mData.hasImage()) {
-                    mData.computeOffset(mDragOffset, mDownX - x, mDownY - y);
-                    invalidate();
+                if (ev.getPointerCount() == 1) {
+                    if (mDragOffset != null) {
+                        mData.computeOffset(mDragOffset, mDownX - x, mDownY - y);
+                        invalidate();
+                    }
+                } else if (ev.getPointerCount() == 2) {
+                    float x2 = ev.getX(1);
+                    float y2 = ev.getX(1);
+                    float xDiffBase = Math.abs(mDownX2 - mDownX);
+                    float yDiffBase = Math.abs(mDownY2 - mDownY);
+                    float xDiff = Math.abs(x2 - x);
+                    float yDiff = Math.abs(y2 - y);
+                    Log.e("VLAD", "Pinch: " + ((xDiff + yDiff) / (xDiffBase + yDiffBase)));
                 }
                 break;
 
             case MotionEvent.ACTION_UP:
-                if (mData.hasImage()) {
+                if (mDragOffset != null) {
                     mData.applyOffset(mDragOffset);
-                    mDragOffset.set(0, 0);
+                    mDragOffset = null;
                     invalidate();
                 }
                 break;
 
             case MotionEvent.ACTION_CANCEL:
-                if (mData.hasImage()) {
-                    mDragOffset.set(0, 0);
+                if (mDragOffset != null) {
+                    mDragOffset = null;
                     invalidate();
                 }
                 break;
@@ -138,8 +164,8 @@ public class CellView extends View {
 
         canvas.drawBitmap(
                 mData.getBitmap(),
-                viewPivotX - (mData.getPivotX() + mDragOffset.x),
-                viewPivotY - (mData.getPivotY() + mDragOffset.y),
+                viewPivotX - (mData.getPivotX() + (mDragOffset == null ? 0 : mDragOffset.x)),
+                viewPivotY - (mData.getPivotY() + (mDragOffset == null ? 0 : mDragOffset.y)),
                 null);
     }
 
