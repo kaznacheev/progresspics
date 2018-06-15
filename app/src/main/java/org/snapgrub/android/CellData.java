@@ -81,6 +81,10 @@ public class CellData {
         return mScale;
     }
 
+    public void applyScale(float scale) {
+        mScale *= scale;
+    }
+
     public void computeOffset(Point outImageOffset, float screenOffsetX, float screenOffsetY) {
         final int imageX = (int) (screenOffsetX / mScale);
         final int imageY = (int) (screenOffsetY / mScale);

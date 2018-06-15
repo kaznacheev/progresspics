@@ -24,11 +24,14 @@ public class CellView extends View {
     private Rect mRect = new Rect();
     private CellData mData;
 
-    private float mDownX;
-    private float mDownY;
-    private float mDownX2;
-    private float mDownY2;
-    private Point mDragOffset;
+    private float mDownX0;
+    private float mDownY0;
+    private float mDownX1;
+    private float mDownY1;
+    private Point mDragOffset = new Point();
+    private float mPinchScale = 1;
+    private boolean mDragInProgress;
+    private boolean mPinchInProgress;
 
     public CellView(Context context) {
         super(context);
@@ -48,64 +51,95 @@ public class CellView extends View {
 
     @Override
     public boolean dispatchTouchEvent(MotionEvent ev) {
-        Log.e("VLAD", ev.toString());
         final int action = ev.getActionMasked();
-        float x = (int) ev.getX();
-        float y = (int) ev.getY();
+        if (action == MotionEvent.ACTION_DOWN) {
+            ((MainActivity) getContext()).activateCell(this);
+        }
+
+        if (!mData.hasImage()) {
+            return super.dispatchTouchEvent(ev);
+        }
+
+        int pointerCount = ev.getPointerCount();
+        float x0 = (int) ev.getX(0);
+        float y0 = (int) ev.getY(0);
 
         switch(action) {
             case MotionEvent.ACTION_DOWN:
-                getMainActivity().activateCell(this);
-                if (mData.hasImage()) {
-                    mDownX = x;
-                    mDownY = y;
-                    mDragOffset = new Point(0, 0);
-                }
+                mDownX0 = x0;
+                mDownY0 = y0;
+                mDragInProgress = true;
+                mDragOffset.set(0, 0);
                 break;
 
-            case MotionEvent.ACTION_POINTER_DOWN:
-                if (mDragOffset != null) {
-                    mDragOffset = null;
-                    invalidate();
-                }
-                if (ev.getPointerCount() == 2) {
-                    mDownX2 = ev.getX(1);
-                    mDownY2 = ev.getX(1);
-                }
-                break;
-
-            case MotionEvent.ACTION_MOVE:
-                if (ev.getPointerCount() == 1) {
-                    if (mDragOffset != null) {
-                        mData.computeOffset(mDragOffset, mDownX - x, mDownY - y);
+            case MotionEvent.ACTION_POINTER_DOWN: {
+                final float dragDist = distance(0, 0, mDragOffset.x, mDragOffset.y);
+                // Do not start the pinch if the drag is already too significant.
+                if (dragDist < 5) {
+                    if (mDragInProgress) {
+                        mDragInProgress = false;
+                        mDragOffset.set(0, 0);
                         invalidate();
                     }
-                } else if (ev.getPointerCount() == 2) {
-                    float x2 = ev.getX(1);
-                    float y2 = ev.getX(1);
-                    float xDiffBase = Math.abs(mDownX2 - mDownX);
-                    float yDiffBase = Math.abs(mDownY2 - mDownY);
-                    float xDiff = Math.abs(x2 - x);
-                    float yDiff = Math.abs(y2 - y);
-                    Log.e("VLAD", "Pinch: " + ((xDiff + yDiff) / (xDiffBase + yDiffBase)));
+                    if (pointerCount == 2) {
+                        mDownX1 = ev.getX(1);
+                        mDownY1 = ev.getX(1);
+                        mPinchInProgress = true;
+                        mPinchScale = 1;
+                    }
+                }
+                break;
+            }
+
+            case MotionEvent.ACTION_MOVE:
+                if (mDragInProgress && pointerCount == 1) {
+                    mData.computeOffset(mDragOffset, mDownX0 - x0, mDownY0 - y0);
+                    invalidate();
+                } else if (mPinchInProgress && pointerCount == 2) {
+                    float x1 = ev.getX(1);
+                    float y1 = ev.getX(1);
+
+                    float distOnDown = distance(mDownX0, mDownY0, mDownX1, mDownY1);
+                    float distCurrent = distance(x0, y0, x1, y1);
+                    if (distOnDown > 1) {
+                        mPinchScale = distCurrent / distOnDown;
+                    } else {
+                        mPinchScale = 1;
+                    }
+                    invalidate();
+                }
+                break;
+
+            case MotionEvent.ACTION_POINTER_UP:
+                if (mPinchInProgress && pointerCount == 2) {
+                    mPinchInProgress = false;
+                    mData.applyScale(mPinchScale);
+                    mPinchScale = 1;
+                    invalidate();
                 }
                 break;
 
             case MotionEvent.ACTION_UP:
-                if (mDragOffset != null) {
+                if (mDragInProgress) {
+                    mDragInProgress = false;
                     mData.applyOffset(mDragOffset);
-                    mDragOffset = null;
+                    mDragOffset.set(0, 0);
                     invalidate();
                 }
                 break;
 
             case MotionEvent.ACTION_CANCEL:
-                if (mDragOffset != null) {
-                    mDragOffset = null;
+                if (mPinchInProgress) {
+                    mPinchInProgress = false;
+                    mPinchScale = 1;
+                    invalidate();
+                }
+                if (mDragInProgress) {
+                    mDragInProgress = false;
+                    mDragOffset.set(0, 0);
                     invalidate();
                 }
                 break;
-
         }
 
         return super.dispatchTouchEvent(ev);
@@ -157,7 +191,7 @@ public class CellView extends View {
         final int viewPivotY = getHeight() / 2;
         canvas.rotate(mData.getRotation() * 90, viewPivotX, viewPivotY);
 
-        float scale = mData.getScale();
+        float scale = mData.getScale() * mPinchScale;
         canvas.scale(scale, scale, viewPivotX, viewPivotY);
 
         Log.e(TAG, "onDraw canvas:" + mRect + ", bitmap:" + mData.getBitmap().getWidth() + "x" + mData.getBitmap().getHeight());
@@ -183,7 +217,7 @@ public class CellView extends View {
         }
     }
 
-    private MainActivity getMainActivity() {
-        return (MainActivity) getContext();
+    private static float distance(float x0, float y0, float x1, float y1) {
+        return (float) Math.sqrt((x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0));
     }
 }
