@@ -108,11 +108,29 @@ public class MainActivity extends AppCompatActivity {
         mActiveColumns = MAX_COLUMNS;
         mActiveCellIndex = 0;
 
-        if (savedInstanceState != null) {
-            restoreInstanceState(savedInstanceState);
+        Intent intent = getIntent();
+        String action = intent.getAction();
+
+        if (Intent.ACTION_MAIN.equals(action)) {
+            if (savedInstanceState != null) {
+                restoreInstanceState(savedInstanceState);
+            }
         }
 
         setupCellLayout();
+
+        if (Intent.ACTION_SEND.equals(action)) {
+            Uri uri = intent.getParcelableExtra(Intent.EXTRA_STREAM);
+            if (uri != null) {
+                importImages(Collections.singletonList(uri));
+            }
+        } else if (Intent.ACTION_SEND_MULTIPLE.equals(action)) {
+            List<Uri> uris = intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM);
+            if (uris != null) {
+                importImages(uris);
+            }
+        }
+
     }
 
     private void changeCellLayout(int rows, int columns) {
@@ -301,6 +319,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Nullable
     private CellData loadCell(Uri source) {
+        Log.d(LOG_TAG, "loadCell: " + source);
         try {
             final ContentResolver resolver = getContentResolver();
 
@@ -308,7 +327,7 @@ public class MainActivity extends AppCompatActivity {
 
             String timestamp = exif.getAttribute(ExifInterface.TAG_DATETIME);
             if (timestamp == null) {
-                Log.e("VLAD", "No timestamp found in the photo");
+                Log.e(LOG_TAG, "No timestamp found in " + source);
                 timestamp = new SimpleDateFormat("YYYY:MM:dd HH:mm:ss").format(new Date());
             }
 
