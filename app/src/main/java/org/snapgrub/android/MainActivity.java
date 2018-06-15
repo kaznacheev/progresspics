@@ -21,6 +21,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.File;
@@ -61,6 +62,7 @@ public class MainActivity extends AppCompatActivity {
     public static final int JPEG_QUALITY = 85;
 
     private ViewGroup mGridView;
+    private TextView mDateView;
 
     private CellData[] mCellData;
     private CellView[] mCellView;
@@ -89,6 +91,7 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.layout2x3).setOnClickListener(v -> changeCellLayout(2, 3));
 
         mGridView = findViewById(R.id.grid);
+        mDateView = findViewById(R.id.date);
 
         mCellData = new CellData[MAX_CELLS];
         for (int c = 0; c != MAX_CELLS; c++) {
@@ -153,6 +156,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         mCellView[mActiveCellIndex].highlight(true);
+        updateDate();
     }
 
     @Override
@@ -219,6 +223,7 @@ public class MainActivity extends AppCompatActivity {
             mCellView[c].bind(mCellData[c]);
         }
         activateCell(mCellView[0]);
+        updateDate();
     }
 
     private void rotate() {
@@ -285,10 +290,8 @@ public class MainActivity extends AppCompatActivity {
             final ExifInterface exif = new ExifInterface(resolver.openInputStream(source));
 
             String timestamp = exif.getAttribute(ExifInterface.TAG_DATETIME);
-            if (timestamp != null) {
-                timestamp = timestamp.split(" ")[1].substring(0, 5);
-            } else {
-                timestamp = new SimpleDateFormat("HH:mm").format(new Date());
+            if (timestamp == null) {
+                timestamp = new SimpleDateFormat("YYYY:MM:dd HH:mm:ss").format(new Date());
             }
 
             int width = exif.getAttributeInt(ExifInterface.TAG_IMAGE_WIDTH, -1);
@@ -329,10 +332,22 @@ public class MainActivity extends AppCompatActivity {
             cellData.scaleToFit(cellView.getWidth(), cellView.getHeight());
             cellView.bind(cellData);
             nextCell();
+            updateDate();
         } catch (Exception e) {
             reportError(e.getMessage());
             e.printStackTrace();
         }
+    }
+
+    private void updateDate() {
+        for (CellData cellData : mCellData) {
+            final String timestamp = cellData.getTimestamp();
+            if (timestamp != null) {
+                mDateView.setText(timestamp.split(" ")[0].replace(':', '/'));
+                return;
+            }
+        }
+        mDateView.setText("");
     }
 
     private void nextCell() {

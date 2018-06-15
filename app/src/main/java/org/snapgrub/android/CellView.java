@@ -116,7 +116,11 @@ public class CellView extends View {
         canvas.restore();
 
         String timestamp = mData.getTimestamp();
-        if (timestamp == null) timestamp = "n/a";
+        if (timestamp == null) {
+            timestamp = "n/a";
+        } else {
+            timestamp = timestamp.split(" ")[1].substring(0, 5);
+        }
         mTextPaint.getTextBounds(timestamp, 0, timestamp.length(), mRect);
         float margin = getResources().getDimensionPixelSize(R.dimen.timestampMargin);
         canvas.drawText(timestamp, getWidth() - margin - mRect.width(), margin + mRect.height(), mTextPaint);
