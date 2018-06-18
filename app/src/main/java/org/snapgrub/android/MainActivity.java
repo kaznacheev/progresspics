@@ -298,6 +298,15 @@ public class MainActivity extends AppCompatActivity {
         }
         activateCell(mCellView[0]);
         updateDate();
+
+        File importDir = new File(getCacheDir(), IMPORT_DIRECTORY);
+        for (File file : importDir.listFiles()) {
+            if (!file.delete()) {
+                Util.reportError("Failed to delete " + file);
+            }
+        }
+
+        saveStateToFile();
     }
 
     private void rotate() {
