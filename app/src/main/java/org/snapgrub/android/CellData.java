@@ -5,7 +5,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Point;
 import android.net.Uri;
-import android.os.Bundle;
+import android.os.BaseBundle;
 
 public class CellData {
     private static final String KEY_URI = "uri";
@@ -115,23 +115,24 @@ public class CellData {
         mPivotY += offset.y;
     }
 
-    public void restoreState(Bundle b, ContentResolver contentResolver) {
-        load(b.getParcelable(KEY_URI), contentResolver);
+    public void restoreState(BaseBundle b, ContentResolver contentResolver) {
+        final String uri = b.getString(KEY_URI);
+        load(uri != null ? Uri.parse(uri) : null, contentResolver);
         mTimestamp = b.getString(KEY_TIMESTAMP);
         mRotation = b.getInt(KEY_ROTATION);
         mPivotX = b.getInt(KEY_PIVOT_X);
         mPivotY = b.getInt(KEY_PIVOT_Y);
-        mScale = b.getFloat(KEY_SCALE);
+        mScale = (float) b.getDouble(KEY_SCALE);
     }
 
-    public Bundle toBundle() {
-        Bundle b = new Bundle();
-        b.putParcelable(KEY_URI, mUri);
+    public void saveState(BaseBundle b) {
+        if (mUri != null) {
+            b.putString(KEY_URI, mUri.toString());
+        }
         b.putString(KEY_TIMESTAMP, mTimestamp);
         b.putInt(KEY_ROTATION, mRotation);
         b.putInt(KEY_PIVOT_X, mPivotX);
         b.putInt(KEY_PIVOT_Y, mPivotY);
-        b.putFloat(KEY_SCALE, mScale);
-        return b;
+        b.putDouble(KEY_SCALE, mScale);
     }
 }

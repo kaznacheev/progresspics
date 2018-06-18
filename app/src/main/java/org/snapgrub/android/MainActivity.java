@@ -1,6 +1,7 @@
 package org.snapgrub.android;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.ActivityNotFoundException;
 import android.content.ClipData;
 import android.content.ContentResolver;
@@ -10,8 +11,11 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.net.Uri;
+import android.os.BaseBundle;
 import android.os.Build;
 import android.os.Environment;
+import android.os.Parcel;
+import android.os.PersistableBundle;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -22,11 +26,8 @@ import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -40,7 +41,7 @@ import static android.support.v4.content.FileProvider.getUriForFile;
 
 public class MainActivity extends AppCompatActivity {
 
-    private static final String LOG_TAG = "SnapGrub";
+    static final String LOG_TAG = "SnapGrub";
 
     private static final String EXPORT_DIRECTORY = "SnapGrub";
     private static final String EXPORT_PREFIX = "collage";
@@ -54,6 +55,9 @@ public class MainActivity extends AppCompatActivity {
     public static final String IMPORT_DIRECTORY = "import";
     public static final String IMPORT_PREFIX = "import";
 
+    private static final String STATE_DIRECTORY = "state";
+    private static final String STATE_FILE = "state.bin";
+
     public static final String AUTHORITY = "org.snapgrub.android.fileprovider";
 
     private static final int CAPTURE_REQUEST_CODE = 1;
@@ -66,6 +70,8 @@ public class MainActivity extends AppCompatActivity {
     public static final int MAX_CELLS = MAX_ROWS * MAX_COLUMNS;
 
     public static final int JPEG_QUALITY = 85;
+
+    private File mStateFile;
 
     private ViewGroup mGridView;
     private TextView mDateView;
@@ -108,12 +114,16 @@ public class MainActivity extends AppCompatActivity {
         mActiveColumns = MAX_COLUMNS;
         mActiveCellIndex = 0;
 
+        mStateFile = Util.getFile(getFilesDir(), STATE_DIRECTORY, STATE_FILE);
+
         Intent intent = getIntent();
         String action = intent.getAction();
 
         if (Intent.ACTION_MAIN.equals(action)) {
             if (savedInstanceState != null) {
                 restoreInstanceState(savedInstanceState);
+            } else if (mStateFile.exists()) {
+                restoreStateFromFile();
             }
         }
 
@@ -186,25 +196,65 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
+        saveInstanceState(outState);
+    }
+
+    private void saveInstanceState(BaseBundle outState) {
         outState.putInt("rows", mActiveRows);
         outState.putInt("columns", mActiveColumns);
         outState.putInt("active", mActiveCellIndex);
 
         for (int c = 0; c != MAX_CELLS; c++) {
-            outState.putBundle("cell" + c, mCellData[c].toBundle());
+            final String cellKey = "cell" + c;
+            final BaseBundle cellBundle;
+            if (outState instanceof Bundle) {
+                cellBundle = new Bundle();
+            } else {
+                cellBundle = new PersistableBundle();
+            }
+            mCellData[c].saveState(cellBundle);
+            if (outState instanceof Bundle) {
+                ((Bundle) outState).putBundle(cellKey, (Bundle)cellBundle);
+            } else {
+                ((PersistableBundle) outState).putPersistableBundle(cellKey, (PersistableBundle)cellBundle);
+            }
         }
     }
 
-    private void restoreInstanceState(Bundle inState) {
+    private void restoreInstanceState(BaseBundle inState) {
         mActiveRows = inState.getInt("rows", mActiveRows);
         mActiveColumns = inState.getInt("columns", mActiveColumns);
         mActiveCellIndex = inState.getInt("active", mActiveCellIndex);
 
         for (int c = 0; c != MAX_CELLS; c++) {
-            Bundle b = inState.getBundle("cell" + c);
-            if (b != null) {
-                mCellData[c].restoreState(b, getContentResolver());
+            final String cellKey = "cell" + c;
+            BaseBundle cellBundle;
+            if (inState instanceof Bundle) {
+                cellBundle = ((Bundle)inState).getBundle(cellKey);
+            } else {
+                cellBundle = ((PersistableBundle)inState).getPersistableBundle(cellKey);
             }
+            if (cellBundle != null) {
+                mCellData[c].restoreState(cellBundle, getContentResolver());
+            }
+        }
+    }
+
+    private void saveStateToFile() {
+        PersistableBundle state = new PersistableBundle();
+        saveInstanceState(state);
+        Parcel parcel = Parcel.obtain();
+        state.writeToParcel(parcel, 0);
+        Util.writeParcelToFile(mStateFile, parcel);
+        parcel.recycle();
+    }
+
+    @SuppressLint("ParcelClassLoader")
+    private void restoreStateFromFile() {
+        Parcel parcel = Util.readParcelFromFile(mStateFile);
+        if (parcel != null) {
+            restoreInstanceState(parcel.readPersistableBundle());
+            parcel.recycle();
         }
     }
 
@@ -236,7 +286,7 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
         }
-        reportError("Cannot activate cell");
+        Util.reportError("Cannot activate cell");
     }
 
     private void clear() {
@@ -256,7 +306,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void snap() {
-        File file = getNewFile(getFilesDir(), CAPTURE_DIRECTORY, CAPTURE_PREFIX);
+        File file = Util.getUniqueImageFile(getFilesDir(), CAPTURE_DIRECTORY, CAPTURE_PREFIX);
         if (file == null) {
             return;
         }
@@ -270,7 +320,7 @@ public class MainActivity extends AppCompatActivity {
         try {
             startActivityForResult(captureIntent, CAPTURE_REQUEST_CODE);
         } catch (ActivityNotFoundException e) {
-            reportError("Failed to resolve intent");
+            Util.reportException(e);
         }
     }
 
@@ -281,14 +331,13 @@ public class MainActivity extends AppCompatActivity {
         try {
             startActivityForResult(pickIntent, PICK_REQUEST_CODE);
         } catch (ActivityNotFoundException e) {
-            reportError("Failed to resolve intent");
+            Util.reportException(e);
         }
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (resultCode != RESULT_OK) {
-            reportError("Intent failed: " + resultCode);
             return;
         }
 
@@ -350,12 +399,12 @@ public class MainActivity extends AppCompatActivity {
                 return null;
             }
 
-            File file = getNewFile(getCacheDir(), IMPORT_DIRECTORY, IMPORT_PREFIX);
+            File file = Util.getUniqueImageFile(getCacheDir(), IMPORT_DIRECTORY, IMPORT_PREFIX);
             if (file == null) {
                 return null;
             }
 
-            saveBitmap(bitmap, file);
+            Util.saveBitmap(file, bitmap, JPEG_QUALITY);
 
             CellData cellData = new CellData();
             cellData.load(getUriForFile(this, AUTHORITY, file), getContentResolver());
@@ -365,8 +414,7 @@ public class MainActivity extends AppCompatActivity {
             cellData.setTimestamp(timestamp);
             return cellData;
         } catch (Exception e) {
-            reportError(e.getMessage());
-            e.printStackTrace();
+            Util.reportException(e);
             return null;
         }
     }
@@ -393,6 +441,8 @@ public class MainActivity extends AppCompatActivity {
             nextCell();
         }
         updateDate();
+        // TODO: save state at more places.
+        saveStateToFile();
     }
 
     private void updateDate() {
@@ -420,12 +470,12 @@ public class MainActivity extends AppCompatActivity {
         if (mustRequestStorageAccess(SAVE_REQUEST_CODE)) {
             return;
         }
-        File file = getNewFile(Environment.getExternalStoragePublicDirectory(
+        File file = Util.getUniqueImageFile(Environment.getExternalStoragePublicDirectory(
                 Environment.DIRECTORY_PICTURES), EXPORT_DIRECTORY, EXPORT_PREFIX);
         if (file == null) {
             return;
         }
-        saveBitmap(createSnapshot(), file);
+        Util.saveBitmap(file, createSnapshot(), JPEG_QUALITY);
     }
 
     private void share() {
@@ -433,12 +483,12 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        File file = getNewFile(getCacheDir(), SHARE_DIRECTORY, SHARE_PREFIX);
+        File file = Util.getUniqueImageFile(getCacheDir(), SHARE_DIRECTORY, SHARE_PREFIX);
         if (file == null) {
             return;
         }
 
-        saveBitmap(createSnapshot(), file);
+        Util.saveBitmap(file, createSnapshot(), JPEG_QUALITY);
 
         Intent shareIntent = new Intent(Intent.ACTION_SEND);
         shareIntent.setType("image/*");
@@ -489,43 +539,5 @@ public class MainActivity extends AppCompatActivity {
         mGridView.draw(canvas);
         getActiveCellView().highlight(true);
         return bitmap;
-    }
-
-    private void saveBitmap(Bitmap bitmap, File file) {
-        try {
-            FileOutputStream fOut = new FileOutputStream(file);
-            bitmap.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, fOut);
-            fOut.flush();
-            fOut.close();
-        } catch (IOException e) {
-            reportError(e.getMessage());
-            e.printStackTrace();
-        }
-    }
-
-    @Nullable
-    private File getNewFile(File root, String dirName, String filePrefix) {
-        File dir = new File(root, dirName);
-        if (!dir.exists() && !dir.mkdirs()) {
-            reportError("Failed to create " + dir);
-            return null;
-        }
-        File file = new File(dir, getTimestampedFileName(filePrefix));
-        if (file.exists() && !file.delete()) {
-            reportError("Failed to delete " + file);
-            return null;
-        }
-        return file;
-    }
-
-    @NonNull
-    private String getTimestampedFileName(String prefix) {
-        String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-        return prefix + "_" + timestamp + ".jpg";
-    }
-
-    private void reportError(String message) {
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
-        Log.e(LOG_TAG, message);
     }
 }
