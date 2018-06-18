@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <merge xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
-        <Button
-            android:id="@+id/layout3x3"
+        <ImageButton
+            android:id="@+id/button_flip"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="3x3"/>
-        <Button
-            android:id="@+id/layout3x2"
+            android:scaleX="-1"
+            app:srcCompat="@android:drawable/ic_menu_revert" />
+        <ImageButton
+            android:id="@+id/button_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="3x2"/>
+            app:srcCompat="@android:drawable/ic_menu_edit" />
         <Button
-            android:id="@+id/layout2x3"
+            android:id="@+id/button_layout"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="2x3"/>
+            android:layout_height="match_parent"/>
 </merge>

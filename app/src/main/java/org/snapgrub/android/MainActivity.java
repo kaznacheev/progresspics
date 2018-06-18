@@ -25,9 +25,11 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.TextView;
 
 import java.io.File;
+import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -39,7 +41,7 @@ import androidx.exifinterface.media.ExifInterface;
 
 import static android.support.v4.content.FileProvider.getUriForFile;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements LayoutDialogFragment.LayoutDialogListener {
 
     static final String LOG_TAG = "SnapGrub";
 
@@ -91,16 +93,14 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         findViewById(R.id.button_clear).setOnClickListener(v -> clear());
-        findViewById(R.id.button_flip).setOnClickListener(v -> rotate());
         findViewById(R.id.button_snap).setOnClickListener(v -> snap());
         findViewById(R.id.button_pick).setOnClickListener(v -> pick());
-        findViewById(R.id.button_text).setOnClickListener(v -> text());
         findViewById(R.id.button_save).setOnClickListener(v -> save());
         findViewById(R.id.button_share).setOnClickListener(v -> share());
 
-        findViewById(R.id.layout3x3).setOnClickListener(v -> changeCellLayout(3, 3));
-        findViewById(R.id.layout3x2).setOnClickListener(v -> changeCellLayout(3, 2));
-        findViewById(R.id.layout2x3).setOnClickListener(v -> changeCellLayout(2, 3));
+        findViewById(R.id.button_text).setOnClickListener(v -> text());
+        findViewById(R.id.button_flip).setOnClickListener(v -> rotate());
+        findViewById(R.id.button_layout).setOnClickListener(v -> pickLayout());
 
         mGridView = findViewById(R.id.grid);
         mDateView = findViewById(R.id.date);
@@ -143,7 +143,12 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    private void changeCellLayout(int rows, int columns) {
+    private void pickLayout() {
+        new LayoutDialogFragment().show(getSupportFragmentManager(), "LayoutDialog");
+    }
+
+    @Override
+    public void selectLayout(int rows, int columns) {
         mActiveRows = rows;
         mActiveColumns = columns;
         setupCellLayout();
@@ -153,6 +158,9 @@ public class MainActivity extends AppCompatActivity {
         if (mCellView != null) {
             mCellView[mActiveCellIndex].highlight(false);
         }
+
+        ((Button)findViewById(R.id.button_layout)).setText(
+                MessageFormat.format(getString(R.string.layout_pattern), mActiveColumns, mActiveRows));
 
         mCellView = new CellView[mActiveRows * mActiveColumns];
 
