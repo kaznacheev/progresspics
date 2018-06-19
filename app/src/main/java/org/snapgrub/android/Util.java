@@ -28,8 +28,14 @@ class Util {
     }
 
     @Nullable
-    static File getUniqueImageFile(File root, String dirName, String filePrefix) {
-        File file = getFile(root, dirName, filePrefix + "_" + getTimestamp() + ".jpg");
+    static File getTimestampedImageFile(File root, String dirName, String filePrefix) {
+        return getTimestampedImageFile(root, dirName, filePrefix, "");
+    }
+
+    @Nullable
+    static File getTimestampedImageFile(File root, String dirName, String filePrefix, String uid) {
+        File file = getFile(
+                root, dirName, filePrefix + "_" + getTimestamp() + "_" + uid + ".jpg");
         if (file == null) {
             return null;
         }

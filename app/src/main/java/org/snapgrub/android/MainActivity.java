@@ -1,7 +1,6 @@
 package org.snapgrub.android;
 
 import android.Manifest;
-import android.annotation.SuppressLint;
 import android.content.ActivityNotFoundException;
 import android.content.ClipData;
 import android.content.ContentResolver;
@@ -14,7 +13,6 @@ import android.net.Uri;
 import android.os.BaseBundle;
 import android.os.Build;
 import android.os.Environment;
-import android.os.Parcel;
 import android.os.PersistableBundle;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
@@ -350,7 +348,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     public void snap() {
-        File file = Util.getUniqueImageFile(getFilesDir(), CAPTURE_DIRECTORY, CAPTURE_PREFIX);
+        File file = Util.getTimestampedImageFile(getFilesDir(), CAPTURE_DIRECTORY, CAPTURE_PREFIX);
         if (file == null) {
             return;
         }
@@ -411,7 +409,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Nullable
-    private CellData loadCell(Uri source) {
+    private CellData loadCell(Uri source, String uid) {
         Log.d(LOG_TAG, "loadCell: " + source);
         try {
             final ContentResolver resolver = getContentResolver();
@@ -443,7 +441,7 @@ public class MainActivity extends AppCompatActivity
                 return null;
             }
 
-            File file = Util.getUniqueImageFile(getCacheDir(), IMPORT_DIRECTORY, IMPORT_PREFIX);
+            File file = Util.getTimestampedImageFile(getCacheDir(), IMPORT_DIRECTORY, IMPORT_PREFIX, uid);
             if (file == null) {
                 return null;
             }
@@ -465,8 +463,9 @@ public class MainActivity extends AppCompatActivity
 
     private void importImages(List<Uri> uris) {
         List<CellData> cells = new ArrayList<>();
+        int uid = 0;
         for (Uri uri : uris) {
-            CellData cell = loadCell(uri);
+            CellData cell = loadCell(uri, " " + uid++);
             if (cell != null) {
                 cells.add(cell);
             }
@@ -479,8 +478,11 @@ public class MainActivity extends AppCompatActivity
             CellView cellView = getActiveCellView();
             cellData.scaleToFit(cellView.getWidth(), cellView.getHeight());
             cellView.bind(cellData, this);
-            if (mActiveCellIndex == mCellView.length - 1) {
-                break;
+            if (cells.size() > 1) {
+                if (mActiveCellIndex == mCellView.length - 1) {
+                    break;
+                }
+                activateCell(mActiveCellIndex + 1);
             }
         }
 
@@ -507,7 +509,7 @@ public class MainActivity extends AppCompatActivity
         if (mustRequestStorageAccess(SAVE_REQUEST_CODE)) {
             return;
         }
-        File file = Util.getUniqueImageFile(Environment.getExternalStoragePublicDirectory(
+        File file = Util.getTimestampedImageFile(Environment.getExternalStoragePublicDirectory(
                 Environment.DIRECTORY_PICTURES), EXPORT_DIRECTORY, EXPORT_PREFIX);
         if (file == null) {
             return;
@@ -520,7 +522,7 @@ public class MainActivity extends AppCompatActivity
             return;
         }
 
-        File file = Util.getUniqueImageFile(getCacheDir(), SHARE_DIRECTORY, SHARE_PREFIX);
+        File file = Util.getTimestampedImageFile(getCacheDir(), SHARE_DIRECTORY, SHARE_PREFIX);
         if (file == null) {
             return;
         }
