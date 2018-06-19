@@ -57,8 +57,8 @@ public class CellData {
         return mRotation;
     }
 
-    public void rotate() {
-        mRotation++;
+    public void rotate(int direction) {
+        mRotation += (direction > 0 ? 1 : 3);
         mRotation %= 4;
     }
 

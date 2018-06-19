@@ -99,8 +99,9 @@ public class MainActivity extends AppCompatActivity implements LayoutDialogFragm
         findViewById(R.id.button_share).setOnClickListener(v -> share());
 
         findViewById(R.id.button_erase).setOnClickListener(v -> erase());
+        findViewById(R.id.button_rotate_left).setOnClickListener(v -> rotate(1));
+        findViewById(R.id.button_rotate_right).setOnClickListener(v -> rotate(-1));
         findViewById(R.id.button_text).setOnClickListener(v -> text());
-        findViewById(R.id.button_flip).setOnClickListener(v -> rotate());
         findViewById(R.id.button_layout).setOnClickListener(v -> pickLayout());
 
         mGridView = findViewById(R.id.grid);
@@ -325,8 +326,8 @@ public class MainActivity extends AppCompatActivity implements LayoutDialogFragm
         getActiveCellView().invalidate();
     }
 
-    private void rotate() {
-        getActiveCellData().rotate();
+    private void rotate(int direction) {
+        getActiveCellData().rotate(direction);
         getActiveCellView().invalidate();
     }
 
