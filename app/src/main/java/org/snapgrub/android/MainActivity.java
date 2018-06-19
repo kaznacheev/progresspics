@@ -62,6 +62,11 @@ public class MainActivity extends AppCompatActivity implements LayoutDialogFragm
 
     public static final String AUTHORITY = "org.snapgrub.android.fileprovider";
 
+    public static final String KEY_ROWS = "rows";
+    public static final String KEY_COLUMNS = "columns";
+    public static final String KEY_ACTIVE = "active";
+    public static final String KEY_CELL = "cell";
+
     private static final int CAPTURE_REQUEST_CODE = 1;
     private static final int PICK_REQUEST_CODE = 2;
     private static final int SAVE_REQUEST_CODE = 3;
@@ -210,12 +215,12 @@ public class MainActivity extends AppCompatActivity implements LayoutDialogFragm
     }
 
     private void saveInstanceState(BaseBundle outState) {
-        outState.putInt("rows", mActiveRows);
-        outState.putInt("columns", mActiveColumns);
-        outState.putInt("active", mActiveCellIndex);
+        outState.putInt(KEY_ROWS, mActiveRows);
+        outState.putInt(KEY_COLUMNS, mActiveColumns);
+        outState.putInt(KEY_ACTIVE, mActiveCellIndex);
 
         for (int c = 0; c != MAX_CELLS; c++) {
-            final String cellKey = "cell" + c;
+            final String cellKey = getCellKey(c);
             final BaseBundle cellBundle;
             if (outState instanceof Bundle) {
                 cellBundle = new Bundle();
@@ -232,12 +237,12 @@ public class MainActivity extends AppCompatActivity implements LayoutDialogFragm
     }
 
     private void restoreInstanceState(BaseBundle inState) {
-        mActiveRows = inState.getInt("rows", mActiveRows);
-        mActiveColumns = inState.getInt("columns", mActiveColumns);
-        mActiveCellIndex = inState.getInt("active", mActiveCellIndex);
+        mActiveRows = inState.getInt(KEY_ROWS, mActiveRows);
+        mActiveColumns = inState.getInt(KEY_COLUMNS, mActiveColumns);
+        mActiveCellIndex = inState.getInt(KEY_ACTIVE, mActiveCellIndex);
 
         for (int c = 0; c != MAX_CELLS; c++) {
-            final String cellKey = "cell" + c;
+            final String cellKey = getCellKey(c);
             BaseBundle cellBundle;
             if (inState instanceof Bundle) {
                 cellBundle = ((Bundle)inState).getBundle(cellKey);
@@ -248,6 +253,11 @@ public class MainActivity extends AppCompatActivity implements LayoutDialogFragm
                 mCellData[c].restoreState(cellBundle, getContentResolver());
             }
         }
+    }
+
+    @NonNull
+    private static String getCellKey(int index) {
+        return KEY_CELL + index;
     }
 
     private void saveStateToFile() {
@@ -464,7 +474,6 @@ public class MainActivity extends AppCompatActivity implements LayoutDialogFragm
             if (mActiveCellIndex == mCellView.length - 1) {
                 break;
             }
-            nextCell();
         }
         updateDate();
         // TODO: save state at more places.
@@ -480,12 +489,6 @@ public class MainActivity extends AppCompatActivity implements LayoutDialogFragm
             }
         }
         mDateView.setText("");
-    }
-
-    private void nextCell() {
-        if (mActiveCellIndex < mCellView.length - 1) {
-            activateCell(mActiveCellIndex + 1);
-        }
     }
 
     public void text() {
