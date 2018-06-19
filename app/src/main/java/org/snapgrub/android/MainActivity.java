@@ -47,7 +47,7 @@ public class MainActivity extends AppCompatActivity
     private static final String EXPORT_DIRECTORY = "SnapGrub";
     private static final String EXPORT_PREFIX = "collage";
 
-    private static final String CAPTURE_DIRECTORY = "capture";
+    private static final String CAPTURE_DIRECTORY = "SnapGrubCapture";
     private static final String CAPTURE_PREFIX = "capture";
 
     private static final String SHARE_DIRECTORY = "share";
@@ -348,7 +348,8 @@ public class MainActivity extends AppCompatActivity
     }
 
     public void snap() {
-        File file = Util.getTimestampedImageFile(getFilesDir(), CAPTURE_DIRECTORY, CAPTURE_PREFIX);
+        File file = Util.getTimestampedImageFile(Environment.getExternalStoragePublicDirectory(
+                Environment.DIRECTORY_PICTURES), CAPTURE_DIRECTORY, CAPTURE_PREFIX);
         if (file == null) {
             return;
         }
@@ -386,6 +387,7 @@ public class MainActivity extends AppCompatActivity
         switch (requestCode) {
             case CAPTURE_REQUEST_CODE: {
                 importImages(Collections.singletonList(mCaptureUri));
+                publishImage(mCaptureUri);
                 break;
             }
 
@@ -406,6 +408,12 @@ public class MainActivity extends AppCompatActivity
                 break;
             }
         }
+    }
+
+    private void publishImage(Uri uri) {
+        Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+        mediaScanIntent.setData(uri);
+        sendBroadcast(mediaScanIntent);
     }
 
     @Nullable
@@ -515,6 +523,7 @@ public class MainActivity extends AppCompatActivity
             return;
         }
         Util.saveBitmap(file, createSnapshot(), JPEG_QUALITY);
+        publishImage(getUriForFile(this, AUTHORITY, file));
     }
 
     private void share() {
