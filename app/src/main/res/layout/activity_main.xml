@@ -41,20 +41,49 @@
 
     <LinearLayout
         app:layout_constraintTop_toBottomOf="@id/collage"
-        android:layout_marginTop="24dp"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
-        <include layout="@layout/tools"/>
-    </LinearLayout>
-
-    <LinearLayout
         app:layout_constraintBottom_toBottomOf="parent"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="@dimen/grid_margin"
-        android:orientation="horizontal">
-        <include layout="@layout/tools2"/>
+        android:layout_height="0dp"
+        android:orientation="vertical">
+
+        <include layout="@layout/space"/>
+
+        <LinearLayout
+            android:id="@+id/tools"
+            android:layout_marginStart="@dimen/tools_margin"
+            android:layout_marginEnd="@dimen/tools_margin"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <include layout="@layout/tools"/>
+        </LinearLayout>
+
+        <include layout="@layout/space"/>
+
+        <LinearLayout
+            android:id="@+id/tools2"
+            android:layout_marginStart="@dimen/tools_margin"
+            android:layout_marginEnd="@dimen/tools_margin"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <include layout="@layout/tools2"/>
+        </LinearLayout>
+
+        <include layout="@layout/space"/>
+
+        <LinearLayout
+            android:id="@+id/tools3"
+            android:layout_marginStart="@dimen/tools_margin"
+            android:layout_marginEnd="@dimen/tools_margin"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <include layout="@layout/tools3"/>
+        </LinearLayout>
+
+        <include layout="@layout/space"/>
+
     </LinearLayout>
 
 </android.support.constraint.ConstraintLayout>
