@@ -175,7 +175,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
-    public void onCellTouchDown(CellView cellView) {
+    public void onCellActivate(CellView cellView) {
         for (int c = 0; c != mCellView.length; c++) {
             if (mCellView[c] == cellView) {
                 activateCell(c);
@@ -186,7 +186,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
-    public void onCellViewportUpdate() {
+    public void onCellUpdate() {
         saveStateToFile();
     }
 
@@ -431,7 +431,7 @@ public class MainActivity extends AppCompatActivity
 
     @Nullable
     private CellData loadCell(Uri source, String uid) {
-        Log.d(LOG_TAG, "loadCell: " + source);
+        Log.v(LOG_TAG, "loading " + source);
         try {
             final ContentResolver resolver = getContentResolver();
 
@@ -439,7 +439,7 @@ public class MainActivity extends AppCompatActivity
 
             String timestamp = exif.getAttribute(ExifInterface.TAG_DATETIME);
             if (timestamp == null) {
-                Log.e(LOG_TAG, "No timestamp found in " + source);
+                Log.w(LOG_TAG, "No timestamp found in " + source);
                 timestamp = new SimpleDateFormat("YYYY:MM:dd HH:mm:ss").format(new Date());
             }
 
@@ -529,7 +529,7 @@ public class MainActivity extends AppCompatActivity
         float scale = mTextEditingOn ? 1.25f : 1f;
         v.setScaleX(scale);
         v.setScaleY(scale);
-        // Update focusability on the active cell last.
+        // Update focusability on inactive cells first, then the active one.
         // This avoids weird cascading focus transitions.
         for (CellView cellView : mCellView) {
             if (cellView != getActiveCellView()) {
@@ -594,7 +594,6 @@ public class MainActivity extends AppCompatActivity
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            Log.v(LOG_TAG, "Permission: " + permissions[0] + " was " + grantResults[0]);
             switch (requestCode) {
                 case SAVE_REQUEST_CODE:
                     save();

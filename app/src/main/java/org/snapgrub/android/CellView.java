@@ -27,8 +27,8 @@ public class CellView extends View {
     private CellData mData;
 
     public interface Listener {
-        void onCellTouchDown(CellView cellView);
-        void onCellViewportUpdate();
+        void onCellActivate(CellView cellView);
+        void onCellUpdate();
     }
 
     private Listener mListener;
@@ -62,7 +62,7 @@ public class CellView extends View {
     public boolean dispatchTouchEvent(MotionEvent ev) {
         final int action = ev.getActionMasked();
         if (action == MotionEvent.ACTION_DOWN) {
-            mListener.onCellTouchDown(this);
+            mListener.onCellActivate(this);
         }
 
         if (!mData.hasImage()) {
@@ -123,7 +123,7 @@ public class CellView extends View {
                 if (mPinchInProgress && pointerCount == 2) {
                     mPinchInProgress = false;
                     mData.applyScale(mPinchScale);
-                    mListener.onCellViewportUpdate();
+                    mListener.onCellUpdate();
                     mPinchScale = 1;
                     invalidate();
                 }
@@ -133,7 +133,7 @@ public class CellView extends View {
                 if (mDragInProgress) {
                     mDragInProgress = false;
                     mData.applyOffset(mDragOffset);
-                    mListener.onCellViewportUpdate();
+                    mListener.onCellUpdate();
                     mDragOffset.set(0, 0);
                     invalidate();
                 }
@@ -190,12 +190,10 @@ public class CellView extends View {
         float scale = mData.getScale() * mPinchScale;
         canvas.scale(scale, scale, viewPivotX, viewPivotY);
 
-        Log.e(TAG, "onDraw canvas:" + mRect + ", bitmap:" + mData.getBitmap().getWidth() + "x" + mData.getBitmap().getHeight());
-
         canvas.drawBitmap(
                 mData.getBitmap(),
-                viewPivotX - (mData.getPivotX() + (mDragOffset == null ? 0 : mDragOffset.x)),
-                viewPivotY - (mData.getPivotY() + (mDragOffset == null ? 0 : mDragOffset.y)),
+                viewPivotX - (mData.getPivotX() + mDragOffset.x),
+                viewPivotY - (mData.getPivotY() + mDragOffset.y),
                 null);
     }
 
@@ -210,6 +208,7 @@ public class CellView extends View {
             timestampView.setText(timestamp);
         } else {
             timestampView.setVisibility(View.GONE);
+            timestampView.setText("");
         }
 
         TextView textEditorView = getEditableTextOverlay();
@@ -217,10 +216,10 @@ public class CellView extends View {
             textEditorView.setText(mData.getText());
             textEditorView.setOnFocusChangeListener((view, focus) -> {
                 if (focus) {
-                    mListener.onCellTouchDown(this);
+                    mListener.onCellActivate(this);
                 } else {
                     mData.setText(textEditorView.getText().toString());
-                    mListener.onCellViewportUpdate();
+                    mListener.onCellUpdate();
                 }
             });
             textEditorView.setTextColor(getResources().getColor(
