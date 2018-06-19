@@ -211,11 +211,45 @@ public class CellView extends View {
         } else {
             timestampView.setVisibility(View.GONE);
         }
+
+        TextView textEditorView = getEditableTextOverlay();
+        if (mData != null) {
+            textEditorView.setText(mData.getText());
+            textEditorView.setOnFocusChangeListener((view, focus) -> {
+                if (focus) {
+//                    Log.e("VLAD", "Gained focus " + mData.getText());
+//                     TODO figure out why disabling the focused cell passes over the focus to the next one.
+//                     mListener.onCellTouchDown(this);
+                } else {
+                    mData.setText(textEditorView.getText().toString());
+//                    Log.e("VLAD", "Lost focus " + mData.getText());
+                    mListener.onCellViewportUpdate();
+                }
+            });
+            textEditorView.setTextColor(getResources().getColor(
+                    mData.hasImage() ? R.color.colorOverlayLight : R.color.colorOverlayDark, null));
+        } else {
+            textEditorView.setText("");
+            textEditorView.setOnFocusChangeListener(null);
+        }
+
         invalidate();
     }
 
     private TextView getTimestampView() {
         return (TextView)((ViewGroup) getParent()).getChildAt(1);
+    }
+
+    private EditableTextOverlay getEditableTextOverlay() {
+        return (EditableTextOverlay)((ViewGroup) getParent()).getChildAt(2);
+    }
+
+    public void enableTextEditing(boolean on) {
+        getEditableTextOverlay().activate(on);
+    }
+
+    public void startEditing() {
+        getEditableTextOverlay().requestFocus();
     }
 
     public void highlight(boolean on) {

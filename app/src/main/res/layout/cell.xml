@@ -23,4 +23,20 @@
         android:textColor="@color/colorTimestamp"
         android:textStyle="bold"/>
 
+    <org.snapgrub.android.EditableTextOverlay
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingStart="@dimen/overlay_padding_horiz"
+        android:paddingEnd="@dimen/overlay_padding_horiz"
+        android:paddingTop="@dimen/overlay_padding_vert"
+        android:paddingBottom="@dimen/overlay_padding_vert"
+        android:gravity="top"
+        android:textSize="@dimen/overlayTextSize"
+        android:textColor="@color/colorOverlayLight"
+        android:background="@android:color/transparent"
+        android:enabled="false"
+        android:clickable="false"
+        android:focusable="false"
+        android:focusableInTouchMode="false" />
+
 </FrameLayout>

@@ -90,6 +90,7 @@ public class MainActivity extends AppCompatActivity
     private int mActiveCellIndex;
 
     private Uri mCaptureUri;
+    boolean mTextEditingOn;  // Not persistable on purpose.
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -105,7 +106,7 @@ public class MainActivity extends AppCompatActivity
         findViewById(R.id.button_erase).setOnClickListener(v -> erase());
         findViewById(R.id.button_rotate_left).setOnClickListener(v -> rotate(1));
         findViewById(R.id.button_rotate_right).setOnClickListener(v -> rotate(-1));
-        findViewById(R.id.button_text).setOnClickListener(v -> text());
+        findViewById(R.id.button_text).setOnClickListener(this::text);
         findViewById(R.id.button_layout).setOnClickListener(v -> pickLayout());
 
         mGridView = findViewById(R.id.grid);
@@ -195,6 +196,11 @@ public class MainActivity extends AppCompatActivity
 
         int nextCellIndex = 0;
 
+        if (mTextEditingOn) {
+            // Emulate the toggle.
+            text(findViewById(R.id.text));
+        };
+
         for (int r = 0; r != MAX_ROWS; r++) {
             final boolean activeRow = r < mActiveRows;
             final View row = mGridView.getChildAt(r);
@@ -218,6 +224,7 @@ public class MainActivity extends AppCompatActivity
                     cellView.bind(null, this);
                     cellWrapper.setVisibility(View.GONE);
                 }
+                cellView.enableTextEditing(false);
             }
             mGridView.requestLayout();
         }
@@ -510,8 +517,18 @@ public class MainActivity extends AppCompatActivity
         mDateView.setVisibility(View.GONE);
     }
 
-    public void text() {
-
+    public void text(View v) {
+        mTextEditingOn = !mTextEditingOn;
+        // TODO: find a better way to highlight the button
+        float scale = mTextEditingOn ? 1.25f : 1f;
+        v.setScaleX(scale);
+        v.setScaleY(scale);
+        for (CellView cellView : mCellView) {
+            cellView.enableTextEditing(mTextEditingOn);
+        }
+        if (mTextEditingOn) {
+            getActiveCellView().startEditing();
+        }
     }
 
     private void save() {

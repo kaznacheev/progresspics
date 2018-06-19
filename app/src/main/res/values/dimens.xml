@@ -9,4 +9,7 @@
     <dimen name="date_margin">8dp</dimen>
     <dimen name="date_padding">4dp</dimen>
     <dimen name="dateTextSize">18sp</dimen>
+    <dimen name="overlay_padding_horiz">8dp</dimen>
+    <dimen name="overlay_padding_vert">4dp</dimen>
+    <dimen name="overlayTextSize">16sp</dimen>
 </resources>

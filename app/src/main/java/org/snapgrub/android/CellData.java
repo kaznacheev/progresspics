@@ -14,6 +14,7 @@ public class CellData {
     private static final String KEY_PIVOT_X = "pivot_x";
     private static final String KEY_PIVOT_Y = "pivot_y";
     private static final String KEY_SCALE = "scale";
+    private static final String KEY_TEXT = "text";
 
     private Uri mUri;
     private Bitmap mBitmap;
@@ -22,6 +23,7 @@ public class CellData {
     private int mPivotX;
     private int mPivotY;
     private float mScale;
+    private String mText;
 
     public CellData() {}
 
@@ -115,6 +117,14 @@ public class CellData {
         mPivotY += offset.y;
     }
 
+    public void setText(String text) {
+        mText = text;
+    }
+
+    public String getText() {
+        return mText;
+    }
+
     public void restoreState(BaseBundle b, ContentResolver contentResolver) {
         final String uri = b.getString(KEY_URI);
         load(uri != null ? Uri.parse(uri) : null, contentResolver);
@@ -123,6 +133,7 @@ public class CellData {
         mPivotX = b.getInt(KEY_PIVOT_X);
         mPivotY = b.getInt(KEY_PIVOT_Y);
         mScale = (float) b.getDouble(KEY_SCALE);
+        mText = b.getString(KEY_TEXT);
     }
 
     public void saveState(BaseBundle b) {
@@ -134,5 +145,6 @@ public class CellData {
         b.putInt(KEY_PIVOT_X, mPivotX);
         b.putInt(KEY_PIVOT_Y, mPivotY);
         b.putDouble(KEY_SCALE, mScale);
+        b.putString(KEY_TEXT, mText);
     }
 }

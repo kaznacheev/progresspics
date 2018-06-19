@@ -10,4 +10,6 @@
     <color name="colorCellBorder">#3AEB1C</color>
     <color name="colorTimestamp">#FFFFFF</color>
     <color name="colorTimestampBackground">#60000000</color>
+    <color name="colorOverlayLight">#FFFFFF</color>
+    <color name="colorOverlayDark">#202020</color>
 </resources>
