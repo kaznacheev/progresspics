@@ -141,12 +141,12 @@ public class MainActivity extends AppCompatActivity
         if (Intent.ACTION_SEND.equals(action)) {
             Uri uri = intent.getParcelableExtra(Intent.EXTRA_STREAM);
             if (uri != null) {
-                importImages(Collections.singletonList(uri));
+                mGridView.post(() -> importImages(Collections.singletonList(uri)));
             }
         } else if (Intent.ACTION_SEND_MULTIPLE.equals(action)) {
             List<Uri> uris = intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM);
             if (uris != null) {
-                importImages(uris);
+                mGridView.post(() -> importImages(uris));
             }
         }
     }
