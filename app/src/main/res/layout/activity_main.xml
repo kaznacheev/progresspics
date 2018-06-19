@@ -34,7 +34,8 @@
             android:textStyle="bold"
             android:textSize="@dimen/dateTextSize"
             android:background="@color/colorTimestampBackground"
-            android:textColor="@color/colorTimestamp"/>
+            android:textColor="@color/colorTimestamp"
+            android:visibility="gone" />
 
     </FrameLayout>
 
