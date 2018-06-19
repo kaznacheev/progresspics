@@ -9,4 +9,5 @@
     <color name="colorBlankCell">#C0C0C0</color>
     <color name="colorCellBorder">#3AEB1C</color>
     <color name="colorTimestamp">#FFFFFF</color>
+    <color name="colorTimestampBackground">#60000000</color>
 </resources>

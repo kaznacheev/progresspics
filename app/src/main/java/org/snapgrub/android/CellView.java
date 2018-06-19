@@ -10,6 +10,8 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.TextView;
 
 public class CellView extends View {
 
@@ -19,7 +21,6 @@ public class CellView extends View {
 
     private Paint mMarginPaint = new Paint();
     private Paint mBlankPaint = new Paint();
-    private Paint mTextPaint = new Paint();
 
     private Rect mRect = new Rect();
 
@@ -164,11 +165,6 @@ public class CellView extends View {
 
         mBlankPaint.setStyle(Paint.Style.FILL);
         mBlankPaint.setColor(getResources().getColor(R.color.colorBlankCell, null));
-
-        mTextPaint.setStyle(Paint.Style.STROKE);
-        mTextPaint.setColor(getResources().getColor(R.color.colorTimestamp, null));
-        mTextPaint.setTextAlign(Paint.Align.LEFT);
-        mTextPaint.setTextSize(getResources().getDimensionPixelSize(R.dimen.timestampSize));
     }
 
     @Override
@@ -184,16 +180,6 @@ public class CellView extends View {
         canvas.save();
         drawBitmap(canvas);
         canvas.restore();
-
-        String timestamp = mData.getTimestamp();
-        if (timestamp == null) {
-            timestamp = "n/a";
-        } else {
-            timestamp = timestamp.split(" ")[1].substring(0, 5);
-        }
-        mTextPaint.getTextBounds(timestamp, 0, timestamp.length(), mRect);
-        float margin = getResources().getDimensionPixelSize(R.dimen.timestampMargin);
-        canvas.drawText(timestamp, getWidth() - margin - mRect.width(), margin + mRect.height(), mTextPaint);
     }
 
     private void drawBitmap(Canvas canvas) {
@@ -216,7 +202,20 @@ public class CellView extends View {
     public void bind(CellData data, Listener listener) {
         mData = data;
         mListener = listener;
+
+        TextView timestampView = getTimestampView();
+        if (mData != null && mData.getTimestamp() != null) {
+            String timestamp = mData.getTimestamp().split(" ")[1].substring(0, 5);
+            timestampView.setVisibility(View.VISIBLE);
+            timestampView.setText(timestamp);
+        } else {
+            timestampView.setVisibility(View.GONE);
+        }
         invalidate();
+    }
+
+    private TextView getTimestampView() {
+        return (TextView)((ViewGroup) getParent()).getChildAt(1);
     }
 
     public void highlight(boolean on) {
