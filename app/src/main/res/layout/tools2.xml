@@ -2,6 +2,11 @@
 <merge xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
         <ImageButton
+            android:id="@+id/button_erase"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:srcCompat="@android:drawable/ic_menu_close_clear_cancel" />
+        <ImageButton
             android:id="@+id/button_flip"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -12,6 +17,10 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:srcCompat="@android:drawable/ic_menu_edit" />
+        <Space
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1"/>
         <Button
             android:id="@+id/button_layout"
             android:layout_width="wrap_content"

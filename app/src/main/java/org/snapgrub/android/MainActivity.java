@@ -98,6 +98,7 @@ public class MainActivity extends AppCompatActivity implements LayoutDialogFragm
         findViewById(R.id.button_save).setOnClickListener(v -> save());
         findViewById(R.id.button_share).setOnClickListener(v -> share());
 
+        findViewById(R.id.button_erase).setOnClickListener(v -> erase());
         findViewById(R.id.button_text).setOnClickListener(v -> text());
         findViewById(R.id.button_flip).setOnClickListener(v -> rotate());
         findViewById(R.id.button_layout).setOnClickListener(v -> pickLayout());
@@ -315,6 +316,13 @@ public class MainActivity extends AppCompatActivity implements LayoutDialogFragm
         }
 
         saveStateToFile();
+    }
+
+    private void erase() {
+        CellData newCell = new CellData();
+        setActiveCellData(newCell);
+        getActiveCellView().bind(newCell);
+        getActiveCellView().invalidate();
     }
 
     private void rotate() {
