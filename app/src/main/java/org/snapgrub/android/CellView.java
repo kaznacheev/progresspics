@@ -233,6 +233,13 @@ public class CellView extends View {
         invalidate();
     }
 
+    public void scaleToFit() {
+        if (mData != null && mData.hasImage()) {
+            mData.scaleToFit(getWidth(), getHeight());
+            invalidate();
+        }
+    }
+
     private TextView getTimestampView() {
         return (TextView)((ViewGroup) getParent()).getChildAt(1);
     }

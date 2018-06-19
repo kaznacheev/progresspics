@@ -164,7 +164,13 @@ public class MainActivity extends AppCompatActivity
         mActiveRows = rows;
         mActiveColumns = columns;
         setupCellLayout();
-        saveStateToFile();
+        // Delay until after new layout is done.
+        mGridView.post(() -> {
+            for (CellView cellView : mCellView) {
+                cellView.scaleToFit();
+            }
+            saveStateToFile();
+        });
         updateDate();
     }
 
@@ -491,8 +497,8 @@ public class MainActivity extends AppCompatActivity
         for (CellData cellData : cells) {
             setActiveCellData(cellData);
             CellView cellView = getActiveCellView();
-            cellData.scaleToFit(cellView.getWidth(), cellView.getHeight());
             cellView.bind(cellData, this);
+            cellView.scaleToFit();
             if (cells.size() > 1) {
                 if (mActiveCellIndex == mCellView.length - 1) {
                     break;
