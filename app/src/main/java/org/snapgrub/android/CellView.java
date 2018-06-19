@@ -217,12 +217,9 @@ public class CellView extends View {
             textEditorView.setText(mData.getText());
             textEditorView.setOnFocusChangeListener((view, focus) -> {
                 if (focus) {
-//                    Log.e("VLAD", "Gained focus " + mData.getText());
-//                     TODO figure out why disabling the focused cell passes over the focus to the next one.
-//                     mListener.onCellTouchDown(this);
+                    mListener.onCellTouchDown(this);
                 } else {
                     mData.setText(textEditorView.getText().toString());
-//                    Log.e("VLAD", "Lost focus " + mData.getText());
                     mListener.onCellViewportUpdate();
                 }
             });

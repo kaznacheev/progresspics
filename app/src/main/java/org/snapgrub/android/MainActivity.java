@@ -523,9 +523,14 @@ public class MainActivity extends AppCompatActivity
         float scale = mTextEditingOn ? 1.25f : 1f;
         v.setScaleX(scale);
         v.setScaleY(scale);
+        // Update focusability on the active cell last.
+        // This avoids weird cascading focus transitions.
         for (CellView cellView : mCellView) {
-            cellView.enableTextEditing(mTextEditingOn);
+            if (cellView != getActiveCellView()) {
+                cellView.enableTextEditing(mTextEditingOn);
+            }
         }
+        getActiveCellView().enableTextEditing(mTextEditingOn);
         if (mTextEditingOn) {
             getActiveCellView().startEditing();
         }
