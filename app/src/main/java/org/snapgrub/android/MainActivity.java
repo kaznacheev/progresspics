@@ -502,11 +502,12 @@ public class MainActivity extends AppCompatActivity
         for (CellData cellData : mCellData) {
             final String timestamp = cellData.getTimestamp();
             if (timestamp != null) {
+                mDateView.setVisibility(View.VISIBLE);
                 mDateView.setText(timestamp.split(" ")[0].replace(':', '/'));
                 return;
             }
         }
-        mDateView.setText("");
+        mDateView.setVisibility(View.GONE);
     }
 
     public void text() {
@@ -580,11 +581,12 @@ public class MainActivity extends AppCompatActivity
 
     @NonNull
     private Bitmap createSnapshot() {
-        Bitmap bitmap = Bitmap.createBitmap(
-                mGridView.getWidth(), mGridView.getHeight(), Bitmap.Config.ARGB_8888);
-        Canvas canvas = new Canvas(bitmap);
         getActiveCellView().highlight(false);
-        mGridView.draw(canvas);
+        ViewGroup view = findViewById(R.id.collage);
+        Bitmap bitmap = Bitmap.createBitmap(
+                view.getWidth(), view.getHeight(), Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        view.draw(canvas);
         getActiveCellView().highlight(true);
         return bitmap;
     }

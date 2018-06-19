@@ -7,7 +7,7 @@
     android:layout_height="match_parent"
     android:background="@color/colorActivityBackground">
 
-    <LinearLayout
+    <FrameLayout
         xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:app="http://schemas.android.com/apk/res-auto"
         android:id="@+id/collage"
@@ -23,7 +23,20 @@
 
         <include layout="@layout/grid"/>
 
-    </LinearLayout>
+        <TextView
+            android:id="@+id/date"
+            android:layout_gravity="end|bottom"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/date_margin"
+            android:paddingStart="@dimen/date_padding"
+            android:paddingEnd="@dimen/date_padding"
+            android:textStyle="bold"
+            android:textSize="@dimen/dateTextSize"
+            android:background="@color/colorTimestampBackground"
+            android:textColor="@color/colorTimestamp"/>
+
+    </FrameLayout>
 
     <LinearLayout
         app:layout_constraintTop_toBottomOf="@id/collage"
