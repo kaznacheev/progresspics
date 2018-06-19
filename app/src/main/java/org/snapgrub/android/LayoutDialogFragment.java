@@ -9,11 +9,11 @@ import android.support.v4.app.DialogFragment;
 
 public class LayoutDialogFragment extends DialogFragment {
 
-    public interface LayoutDialogListener {
-        void selectLayout(int rows, int columns);
+    public interface Listener {
+        void changeLayout(int rows, int columns);
     }
 
-    private LayoutDialogListener mListener;
+    private Listener mListener;
 
     @Override
     public void onAttach(Context context) {
@@ -35,6 +35,6 @@ public class LayoutDialogFragment extends DialogFragment {
         String[] parts = layout.split("x");
         int rows = Integer.parseInt(parts[1]);
         int columns = Integer.parseInt(parts[0]);
-        mListener.selectLayout(rows, columns);
+        mListener.changeLayout(rows, columns);
     }
 }

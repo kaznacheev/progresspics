@@ -22,7 +22,15 @@ public class CellView extends View {
     private Paint mTextPaint = new Paint();
 
     private Rect mRect = new Rect();
+
     private CellData mData;
+
+    public interface Listener {
+        void onCellTouchDown(CellView cellView);
+        void onCellViewportUpdate();
+    }
+
+    private Listener mListener;
 
     private float mDownX0;
     private float mDownY0;
@@ -53,7 +61,7 @@ public class CellView extends View {
     public boolean dispatchTouchEvent(MotionEvent ev) {
         final int action = ev.getActionMasked();
         if (action == MotionEvent.ACTION_DOWN) {
-            ((MainActivity) getContext()).activateCell(this);
+            mListener.onCellTouchDown(this);
         }
 
         if (!mData.hasImage()) {
@@ -114,6 +122,7 @@ public class CellView extends View {
                 if (mPinchInProgress && pointerCount == 2) {
                     mPinchInProgress = false;
                     mData.applyScale(mPinchScale);
+                    mListener.onCellViewportUpdate();
                     mPinchScale = 1;
                     invalidate();
                 }
@@ -123,6 +132,7 @@ public class CellView extends View {
                 if (mDragInProgress) {
                     mDragInProgress = false;
                     mData.applyOffset(mDragOffset);
+                    mListener.onCellViewportUpdate();
                     mDragOffset.set(0, 0);
                     invalidate();
                 }
@@ -203,8 +213,9 @@ public class CellView extends View {
                 null);
     }
 
-    public void bind(CellData data) {
+    public void bind(CellData data, Listener listener) {
         mData = data;
+        mListener = listener;
         invalidate();
     }
 

@@ -41,7 +41,8 @@ import androidx.exifinterface.media.ExifInterface;
 
 import static android.support.v4.content.FileProvider.getUriForFile;
 
-public class MainActivity extends AppCompatActivity implements LayoutDialogFragment.LayoutDialogListener {
+public class MainActivity extends AppCompatActivity
+        implements LayoutDialogFragment.Listener, CellView.Listener {
 
     static final String LOG_TAG = "SnapGrub";
 
@@ -130,7 +131,10 @@ public class MainActivity extends AppCompatActivity implements LayoutDialogFragm
             if (savedInstanceState != null) {
                 restoreInstanceState(savedInstanceState);
             } else if (mStateFile.exists()) {
-                restoreStateFromFile();
+                PersistableBundle persistentState = Util.readBundle(mStateFile);
+                if (persistentState != null) {
+                    restoreInstanceState(persistentState);
+                }
             }
         }
 
@@ -147,7 +151,6 @@ public class MainActivity extends AppCompatActivity implements LayoutDialogFragm
                 importImages(uris);
             }
         }
-
     }
 
     private void pickLayout() {
@@ -155,10 +158,31 @@ public class MainActivity extends AppCompatActivity implements LayoutDialogFragm
     }
 
     @Override
-    public void selectLayout(int rows, int columns) {
+    public void changeLayout(int rows, int columns) {
+        if (mActiveRows == rows && mActiveColumns == columns) {
+            return;
+        }
         mActiveRows = rows;
         mActiveColumns = columns;
         setupCellLayout();
+        saveStateToFile();
+        updateDate();
+    }
+
+    @Override
+    public void onCellTouchDown(CellView cellView) {
+        for (int c = 0; c != mCellView.length; c++) {
+            if (mCellView[c] == cellView) {
+                activateCell(c);
+                return;
+            }
+        }
+        Util.reportError("Cannot activate cell");
+    }
+
+    @Override
+    public void onCellViewportUpdate() {
+        saveStateToFile();
     }
 
     private void setupCellLayout() {
@@ -188,12 +212,12 @@ public class MainActivity extends AppCompatActivity implements LayoutDialogFragm
 
                 final CellView cellView = (CellView)((ViewGroup) cellWrapper).getChildAt(0);
                 if (activeRow && activeColumn) {
-                    cellView.bind(mCellData[nextCellIndex]);
+                    cellView.bind(mCellData[nextCellIndex], this);
                     mCellView[nextCellIndex++] = cellView;
                     cellWrapper.setVisibility(View.VISIBLE);
                     cellView.setClickable(true);
                 } else {
-                    cellView.bind(null);
+                    cellView.bind(null, this);
                     cellWrapper.setVisibility(View.GONE);
                 }
             }
@@ -205,7 +229,6 @@ public class MainActivity extends AppCompatActivity implements LayoutDialogFragm
         }
 
         mCellView[mActiveCellIndex].highlight(true);
-        updateDate();
     }
 
     @Override
@@ -253,6 +276,8 @@ public class MainActivity extends AppCompatActivity implements LayoutDialogFragm
                 mCellData[c].restoreState(cellBundle, getContentResolver());
             }
         }
+
+        updateDate();
     }
 
     @NonNull
@@ -263,19 +288,7 @@ public class MainActivity extends AppCompatActivity implements LayoutDialogFragm
     private void saveStateToFile() {
         PersistableBundle state = new PersistableBundle();
         saveInstanceState(state);
-        Parcel parcel = Parcel.obtain();
-        state.writeToParcel(parcel, 0);
-        Util.writeParcelToFile(mStateFile, parcel);
-        parcel.recycle();
-    }
-
-    @SuppressLint("ParcelClassLoader")
-    private void restoreStateFromFile() {
-        Parcel parcel = Util.readParcelFromFile(mStateFile);
-        if (parcel != null) {
-            restoreInstanceState(parcel.readPersistableBundle());
-            parcel.recycle();
-        }
+        Util.writeBundle(mStateFile, state);
     }
 
     private void setActiveCellData(CellData cellData) {
@@ -297,16 +310,7 @@ public class MainActivity extends AppCompatActivity implements LayoutDialogFragm
         getActiveCellView().highlight(false);
         mActiveCellIndex = index;
         getActiveCellView().highlight(true);
-    }
-
-    public void activateCell(CellView view) {
-        for (int c = 0; c != mCellView.length; c++) {
-            if (mCellView[c] == view) {
-                activateCell(c);
-                return;
-            }
-        }
-        Util.reportError("Cannot activate cell");
+        saveStateToFile();
     }
 
     private void clear() {
@@ -314,31 +318,35 @@ public class MainActivity extends AppCompatActivity implements LayoutDialogFragm
             mCellData[d] = new CellData();
         }
         for (int c = 0; c != mCellView.length; c++) {
-            mCellView[c].bind(mCellData[c]);
+            mCellView[c].bind(mCellData[c], this);
         }
-        activateCell(mCellView[0]);
+        clearImportedImages();
+        activateCell(0);
         updateDate();
+    }
 
+    private void clearImportedImages() {
         File importDir = new File(getCacheDir(), IMPORT_DIRECTORY);
         for (File file : importDir.listFiles()) {
             if (!file.delete()) {
                 Util.reportError("Failed to delete " + file);
             }
         }
-
-        saveStateToFile();
     }
 
     private void erase() {
         CellData newCell = new CellData();
         setActiveCellData(newCell);
-        getActiveCellView().bind(newCell);
+        getActiveCellView().bind(newCell, this);
         getActiveCellView().invalidate();
+        saveStateToFile();
+        updateDate();
     }
 
     private void rotate(int direction) {
         getActiveCellData().rotate(direction);
         getActiveCellView().invalidate();
+        saveStateToFile();
     }
 
     public void snap() {
@@ -470,14 +478,14 @@ public class MainActivity extends AppCompatActivity implements LayoutDialogFragm
             setActiveCellData(cellData);
             CellView cellView = getActiveCellView();
             cellData.scaleToFit(cellView.getWidth(), cellView.getHeight());
-            cellView.bind(cellData);
+            cellView.bind(cellData, this);
             if (mActiveCellIndex == mCellView.length - 1) {
                 break;
             }
         }
-        updateDate();
-        // TODO: save state at more places.
+
         saveStateToFile();
+        updateDate();
     }
 
     private void updateDate() {

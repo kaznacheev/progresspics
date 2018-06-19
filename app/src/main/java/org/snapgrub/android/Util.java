@@ -1,7 +1,9 @@
 package org.snapgrub.android;
 
+import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
 import android.os.Parcel;
+import android.os.PersistableBundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
@@ -43,7 +45,9 @@ class Util {
         return new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
     }
 
-    static void writeParcelToFile(File file, Parcel parcel) {
+    static void writeBundle(File file, PersistableBundle bundle) {
+        final Parcel parcel = Parcel.obtain();
+        bundle.writeToParcel(parcel, 0);
         try {
             FileOutputStream fOut = new FileOutputStream(file);
             fOut.write(parcel.marshall());
@@ -52,26 +56,30 @@ class Util {
         } catch (IOException e) {
             reportException(e);
         }
+        parcel.recycle();
     }
 
-    static Parcel readParcelFromFile(File file) {
+    @SuppressLint("ParcelClassLoader")
+    static PersistableBundle readBundle(File file) {
         Parcel parcel = Parcel.obtain();
         try {
             FileInputStream fIn = new FileInputStream(file);
-            int length = (int) file.length();
-            byte[] data = new byte[length];
+            byte[] data = new byte[(int) file.length()];
             int readBytes = fIn.read(data);
-            if (readBytes != length) {
+            fIn.close();
+            if (readBytes != data.length) {
                 reportError("State file too short");
                 return null;
             }
-            parcel.unmarshall(data, 0, length);
+            parcel.unmarshall(data, 0, data.length);
             parcel.setDataPosition(0);
-            fIn.close();
+            return parcel.readPersistableBundle();
         } catch (IOException e) {
             reportException(e);
+            return null;
+        } finally {
+            parcel.recycle();
         }
-        return parcel;
     }
 
     static void saveBitmap(File file, Bitmap bitmap, int quality) {
