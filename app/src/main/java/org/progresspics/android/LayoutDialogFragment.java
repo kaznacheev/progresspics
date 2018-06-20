@@ -10,7 +10,7 @@ import android.support.v4.app.DialogFragment;
 public class LayoutDialogFragment extends DialogFragment {
 
     public interface Listener {
-        void changeLayout(int rows, int columns);
+        void changeLayout(int[] cellsPerRow);
     }
 
     private Listener mListener;
@@ -33,8 +33,23 @@ public class LayoutDialogFragment extends DialogFragment {
     private void parseSelectedLayoutItem(int which) {
         String layout = getContext().getResources().getStringArray(R.array.layouts_array)[which];
         String[] parts = layout.split("x");
-        int rows = Integer.parseInt(parts[1]);
-        int columns = Integer.parseInt(parts[0]);
-        mListener.changeLayout(rows, columns);
+        if (parts.length == 2) {
+            int rows = Integer.parseInt(parts[1]);
+            int columns = Integer.parseInt(parts[0]);
+            int [] cellsPerRow = new int[rows];
+            for (int r = 0; r != rows; ++r) {
+                cellsPerRow[r] = columns;
+            }
+            mListener.changeLayout(cellsPerRow);
+        } else {
+            parts = layout.split("\\+");
+            if (parts.length > 1) {
+                int [] cellsPerRow = new int[parts.length];
+                for (int r = 0; r != parts.length; ++r) {
+                    cellsPerRow[r] = Integer.parseInt(parts[r]);
+                }
+                mListener.changeLayout(cellsPerRow);
+            }
+        }
     }
 }

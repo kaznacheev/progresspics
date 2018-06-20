@@ -149,15 +149,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
-    public void changeLayout(int rows, int columns) {
-        int [] cellsPerRow = new int[rows];
-        for (int r = 0; r != rows; ++r) {
-            cellsPerRow[r] = columns;
-        }
-        changeLayout(cellsPerRow);
-    }
-
-    private void changeLayout(int[] cellsPerRow) {
+    public void changeLayout(int[] cellsPerRow) {
         if (Arrays.equals(mCellsPerRow, cellsPerRow)) {
             return;
         }
