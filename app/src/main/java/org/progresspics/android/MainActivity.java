@@ -214,20 +214,20 @@ public class MainActivity extends AppCompatActivity
             text(findViewById(R.id.text));
         };
 
-        for (int r = 0; r != MAX_ROWS; r++) {
+        for (int r = 0; r != mGridView.getChildCount(); r++) {
             final boolean activeRow = r < mCellsPerRow.length;
-            final View row = mGridView.getChildAt(r);
+            final ViewGroup row = (ViewGroup) mGridView.getChildAt(r);
             if (activeRow) {
                 row.setVisibility(View.VISIBLE);
             } else {
                 row.setVisibility(View.GONE);
             }
 
-            for (int c = 0; c != MAX_COLUMNS; c++) {
+            for (int c = 0; c != row.getChildCount(); c++) {
                 final boolean activeColumn = activeRow && c < mCellsPerRow[r];
-                View cellWrapper = ((ViewGroup) row).getChildAt(c);
+                ViewGroup cellWrapper = (ViewGroup) row.getChildAt(c);
 
-                final CellView cellView = (CellView)((ViewGroup) cellWrapper).getChildAt(0);
+                final CellView cellView = (CellView) cellWrapper.getChildAt(0);
                 if (activeColumn) {
                     cellView.bind(mCellData[nextCellIndex], this);
                     mCellView[nextCellIndex++] = cellView;
@@ -259,7 +259,7 @@ public class MainActivity extends AppCompatActivity
         outState.putIntArray(KEY_LAYOUT, mCellsPerRow);
         outState.putInt(KEY_ACTIVE, mActiveCellIndex);
 
-        for (int c = 0; c != MAX_CELLS; c++) {
+        for (int c = 0; c != mCellData.length; c++) {
             final String cellKey = getCellKey(c);
             final BaseBundle cellBundle;
             if (outState instanceof Bundle) {
@@ -280,7 +280,7 @@ public class MainActivity extends AppCompatActivity
         mCellsPerRow = inState.getIntArray(KEY_LAYOUT);
         mActiveCellIndex = inState.getInt(KEY_ACTIVE, mActiveCellIndex);
 
-        for (int c = 0; c != MAX_CELLS; c++) {
+        for (int c = 0; c != mCellData.length; c++) {
             final String cellKey = getCellKey(c);
             BaseBundle cellBundle;
             if (inState instanceof Bundle) {
