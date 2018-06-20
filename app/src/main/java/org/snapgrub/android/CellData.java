@@ -68,13 +68,21 @@ public class CellData {
     public void scaleToFit(int width, int height) {
         mPivotX = mBitmap.getWidth() / 2;
         mPivotY = mBitmap.getHeight() / 2;
-        mScale = Math.min(width * 1f / mBitmap.getWidth(), height * 1f / mBitmap.getHeight());
+        if (mRotation % 2 == 0) {
+            mScale = Math.min(width * 1f / mBitmap.getWidth(), height * 1f / mBitmap.getHeight());
+        } else {
+            mScale = Math.min(height * 1f / mBitmap.getWidth(), width * 1f / mBitmap.getHeight());
+        }
     }
 
     public void scaleToFill(int width, int height) {
         mPivotX = mBitmap.getWidth() / 2;
         mPivotY = mBitmap.getHeight() / 2;
-        mScale = Math.max(width * 1f / mBitmap.getWidth(), height * 1f / mBitmap.getHeight());
+        if (mRotation % 2 == 0) {
+            mScale = Math.max(width * 1f / mBitmap.getWidth(), height * 1f / mBitmap.getHeight());
+        } else {
+            mScale = Math.max(height * 1f / mBitmap.getWidth(), width * 1f / mBitmap.getHeight());
+        }
     }
 
     public int getPivotX() {
