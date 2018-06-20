@@ -28,6 +28,7 @@ import android.widget.TextView;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -59,8 +60,7 @@ public class MainActivity extends AppCompatActivity
 
     public static final String AUTHORITY = "org.progresspics.android.fileprovider";
 
-    public static final String KEY_ROWS = "rows";
-    public static final String KEY_COLUMNS = "columns";
+    private static final String KEY_LAYOUT = "layout";
     public static final String KEY_ACTIVE = "active";
     public static final String KEY_CELL = "cell";
 
@@ -83,8 +83,7 @@ public class MainActivity extends AppCompatActivity
     private CellData[] mCellData;
     private CellView[] mCellView;
 
-    private int mActiveRows;
-    private int mActiveColumns;
+    private int[] mCellsPerRow;
     private int mActiveCellIndex;
 
     private Uri mCaptureUri;
@@ -118,8 +117,7 @@ public class MainActivity extends AppCompatActivity
             mCellData[c] = new CellData();
         }
 
-        mActiveRows = MAX_ROWS;
-        mActiveColumns = MAX_COLUMNS;
+        mCellsPerRow = new int[] {3, 3, 3};
         mActiveCellIndex = 0;
 
         mStateFile = Util.getFile(getFilesDir(), STATE_DIRECTORY, STATE_FILE);
@@ -159,11 +157,18 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void changeLayout(int rows, int columns) {
-        if (mActiveRows == rows && mActiveColumns == columns) {
+        int [] cellsPerRow = new int[rows];
+        for (int r = 0; r != rows; ++r) {
+            cellsPerRow[r] = columns;
+        }
+        changeLayout(cellsPerRow);
+    }
+
+    private void changeLayout(int[] cellsPerRow) {
+        if (Arrays.equals(mCellsPerRow, cellsPerRow)) {
             return;
         }
-        mActiveRows = rows;
-        mActiveColumns = columns;
+        mCellsPerRow = cellsPerRow;
         setupCellLayout();
         // Delay until after new layout is done.
         mGridView.post(() -> {
@@ -196,7 +201,11 @@ public class MainActivity extends AppCompatActivity
             mCellView[mActiveCellIndex].highlight(false);
         }
 
-        mCellView = new CellView[mActiveRows * mActiveColumns];
+        int cellCount = 0;
+        for (int cells : mCellsPerRow) {
+            cellCount += cells;
+        }
+        mCellView = new CellView[cellCount];
 
         int nextCellIndex = 0;
 
@@ -206,7 +215,7 @@ public class MainActivity extends AppCompatActivity
         };
 
         for (int r = 0; r != MAX_ROWS; r++) {
-            final boolean activeRow = r < mActiveRows;
+            final boolean activeRow = r < mCellsPerRow.length;
             final View row = mGridView.getChildAt(r);
             if (activeRow) {
                 row.setVisibility(View.VISIBLE);
@@ -215,11 +224,11 @@ public class MainActivity extends AppCompatActivity
             }
 
             for (int c = 0; c != MAX_COLUMNS; c++) {
-                final boolean activeColumn = c < mActiveColumns;
+                final boolean activeColumn = activeRow && c < mCellsPerRow[r];
                 View cellWrapper = ((ViewGroup) row).getChildAt(c);
 
                 final CellView cellView = (CellView)((ViewGroup) cellWrapper).getChildAt(0);
-                if (activeRow && activeColumn) {
+                if (activeColumn) {
                     cellView.bind(mCellData[nextCellIndex], this);
                     mCellView[nextCellIndex++] = cellView;
                     cellWrapper.setVisibility(View.VISIBLE);
@@ -247,8 +256,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void saveInstanceState(BaseBundle outState) {
-        outState.putInt(KEY_ROWS, mActiveRows);
-        outState.putInt(KEY_COLUMNS, mActiveColumns);
+        outState.putIntArray(KEY_LAYOUT, mCellsPerRow);
         outState.putInt(KEY_ACTIVE, mActiveCellIndex);
 
         for (int c = 0; c != MAX_CELLS; c++) {
@@ -269,8 +277,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void restoreInstanceState(BaseBundle inState) {
-        mActiveRows = inState.getInt(KEY_ROWS, mActiveRows);
-        mActiveColumns = inState.getInt(KEY_COLUMNS, mActiveColumns);
+        mCellsPerRow = inState.getIntArray(KEY_LAYOUT);
         mActiveCellIndex = inState.getInt(KEY_ACTIVE, mActiveCellIndex);
 
         for (int c = 0; c != MAX_CELLS; c++) {
