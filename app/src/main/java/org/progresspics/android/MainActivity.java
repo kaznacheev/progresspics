@@ -69,6 +69,7 @@ public class MainActivity extends AppCompatActivity
     private static final int PICK_REQUEST_CODE = 2;
     private static final int SAVE_REQUEST_CODE = 3;
     private static final int SHARE_REQUEST_CODE = 4;
+    private static final int SNAP_REQUEST_CODE = 5;
 
     public static final int JPEG_QUALITY = 85;
 
@@ -365,6 +366,10 @@ public class MainActivity extends AppCompatActivity
     }
 
     public void snap() {
+        if (mustRequestStorageAccess(SNAP_REQUEST_CODE)) {
+            return;
+        }
+
         File file = Util.getTimestampedImageFile(Environment.getExternalStoragePublicDirectory(
                 Environment.DIRECTORY_PICTURES), CAPTURE_DIRECTORY, CAPTURE_PREFIX);
         if (file == null) {
@@ -613,6 +618,10 @@ public class MainActivity extends AppCompatActivity
 
                 case SHARE_REQUEST_CODE:
                     share();
+                    break;
+
+                case SNAP_REQUEST_CODE:
+                    snap();
                     break;
             }
         }
