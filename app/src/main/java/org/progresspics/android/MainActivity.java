@@ -63,15 +63,12 @@ public class MainActivity extends AppCompatActivity
     private static final String KEY_LAYOUT = "layout";
     public static final String KEY_ACTIVE = "active";
     public static final String KEY_CELL = "cell";
+    private static final String KEY_CELLS = "cellCount";
 
     private static final int CAPTURE_REQUEST_CODE = 1;
     private static final int PICK_REQUEST_CODE = 2;
     private static final int SAVE_REQUEST_CODE = 3;
     private static final int SHARE_REQUEST_CODE = 4;
-
-    public static final int MAX_ROWS = 3;
-    public static final int MAX_COLUMNS = 3;
-    public static final int MAX_CELLS = MAX_ROWS * MAX_COLUMNS;
 
     public static final int JPEG_QUALITY = 85;
 
@@ -80,8 +77,8 @@ public class MainActivity extends AppCompatActivity
     private ViewGroup mGridView;
     private TextView mDateView;
 
-    private CellData[] mCellData;
-    private CellView[] mCellView;
+    private final ArrayList<CellData> mCellData = new ArrayList<>();
+    private final ArrayList<CellView> mCellView = new ArrayList<>();
 
     private int[] mCellsPerRow;
     private int mActiveCellIndex;
@@ -111,11 +108,6 @@ public class MainActivity extends AppCompatActivity
 
         mGridView = findViewById(R.id.grid);
         mDateView = findViewById(R.id.date);
-
-        mCellData = new CellData[MAX_CELLS];
-        for (int c = 0; c != MAX_CELLS; c++) {
-            mCellData[c] = new CellData();
-        }
 
         mCellsPerRow = new int[] {3, 3, 3};
         mActiveCellIndex = 0;
@@ -181,12 +173,14 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
-    public void onCellActivate(CellView cellView) {
-        for (int c = 0; c != mCellView.length; c++) {
-            if (mCellView[c] == cellView) {
+    public void onCellActivate(CellView toActivate) {
+        int c = 0;
+        for (CellView cellView : mCellView) {
+            if (cellView == toActivate) {
                 activateCell(c);
                 return;
             }
+            c++;
         }
         Util.reportError("Cannot activate cell");
     }
@@ -197,22 +191,16 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void setupCellLayout() {
-        if (mCellView != null) {
-            mCellView[mActiveCellIndex].highlight(false);
-        }
-
-        int cellCount = 0;
-        for (int cells : mCellsPerRow) {
-            cellCount += cells;
-        }
-        mCellView = new CellView[cellCount];
-
-        int nextCellIndex = 0;
-
         if (mTextEditingOn) {
             // Emulate the toggle.
             text(findViewById(R.id.text));
         };
+
+        if (mActiveCellIndex < mCellView.size()) {
+            mCellView.get(mActiveCellIndex).highlight(false);
+        }
+
+        mCellView.clear();
 
         for (int r = 0; r != mGridView.getChildCount(); r++) {
             final boolean activeRow = r < mCellsPerRow.length;
@@ -229,8 +217,12 @@ public class MainActivity extends AppCompatActivity
 
                 final CellView cellView = (CellView) cellWrapper.getChildAt(0);
                 if (activeColumn) {
-                    cellView.bind(mCellData[nextCellIndex], this);
-                    mCellView[nextCellIndex++] = cellView;
+                    final int index = mCellView.size();
+                    if (index == mCellData.size()) {
+                        mCellData.add(new CellData());
+                    }
+                    cellView.bind(mCellData.get(index), this);
+                    mCellView.add(cellView);
                     cellWrapper.setVisibility(View.VISIBLE);
                     cellView.setClickable(true);
                 } else {
@@ -242,11 +234,11 @@ public class MainActivity extends AppCompatActivity
             mGridView.requestLayout();
         }
 
-        if (mActiveCellIndex >= mCellView.length) {
-            mActiveCellIndex = mCellView.length - 1;
+        if (mActiveCellIndex >= mCellView.size()) {
+            mActiveCellIndex = mCellView.size() - 1;
         }
 
-        mCellView[mActiveCellIndex].highlight(true);
+        mCellView.get(mActiveCellIndex).highlight(true);
     }
 
     @Override
@@ -258,16 +250,18 @@ public class MainActivity extends AppCompatActivity
     private void saveInstanceState(BaseBundle outState) {
         outState.putIntArray(KEY_LAYOUT, mCellsPerRow);
         outState.putInt(KEY_ACTIVE, mActiveCellIndex);
+        outState.putInt(KEY_CELLS, mCellData.size());
 
-        for (int c = 0; c != mCellData.length; c++) {
-            final String cellKey = getCellKey(c);
+        int c = 0;
+        for (CellData cellData : mCellData) {
+            final String cellKey = getCellKey(c++);
             final BaseBundle cellBundle;
             if (outState instanceof Bundle) {
                 cellBundle = new Bundle();
             } else {
                 cellBundle = new PersistableBundle();
             }
-            mCellData[c].saveState(cellBundle);
+            cellData.saveState(cellBundle);
             if (outState instanceof Bundle) {
                 ((Bundle) outState).putBundle(cellKey, (Bundle)cellBundle);
             } else {
@@ -279,8 +273,10 @@ public class MainActivity extends AppCompatActivity
     private void restoreInstanceState(BaseBundle inState) {
         mCellsPerRow = inState.getIntArray(KEY_LAYOUT);
         mActiveCellIndex = inState.getInt(KEY_ACTIVE, mActiveCellIndex);
+        int cellCount = inState.getInt(KEY_CELLS, 0);
+        mCellData.clear();
 
-        for (int c = 0; c != mCellData.length; c++) {
+        for (int c = 0; c != cellCount; c++) {
             final String cellKey = getCellKey(c);
             BaseBundle cellBundle;
             if (inState instanceof Bundle) {
@@ -288,9 +284,11 @@ public class MainActivity extends AppCompatActivity
             } else {
                 cellBundle = ((PersistableBundle)inState).getPersistableBundle(cellKey);
             }
+            CellData cellData = new CellData();
             if (cellBundle != null) {
-                mCellData[c].restoreState(cellBundle, getContentResolver());
+                cellData.restoreState(cellBundle, getContentResolver());
             }
+            mCellData.add(cellData);
         }
 
         updateDate();
@@ -308,15 +306,15 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void setActiveCellData(CellData cellData) {
-        mCellData[mActiveCellIndex] = cellData;
+        mCellData.set(mActiveCellIndex, cellData);
     }
 
     private CellData getActiveCellData() {
-        return mCellData[mActiveCellIndex];
+        return mCellData.get(mActiveCellIndex);
     }
 
     private CellView getActiveCellView() {
-        return mCellView[mActiveCellIndex];
+        return mCellView.get(mActiveCellIndex);
     }
 
     public void activateCell(int index) {
@@ -330,14 +328,15 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void clear() {
-        for (int d = 0; d != mCellData.length; d++) {
-            mCellData[d] = new CellData();
-        }
-        for (int c = 0; c != mCellView.length; c++) {
-            mCellView[c].bind(mCellData[c], this);
+        mCellData.clear();
+        for (CellView cellView : mCellView) {
+            CellData cellData = new CellData();
+            mCellData.add(cellData);
+            cellView.bind(cellData, this);
         }
         clearImportedImages();
         activateCell(0);
+        saveStateToFile();
         updateDate();
     }
 
@@ -505,7 +504,7 @@ public class MainActivity extends AppCompatActivity
             cellView.bind(cellData, this);
             cellView.scaleToFill();
             if (cells.size() > 1) {
-                if (mActiveCellIndex == mCellView.length - 1) {
+                if (mActiveCellIndex == mCellView.size() - 1) {
                     break;
                 }
                 activateCell(mActiveCellIndex + 1);
