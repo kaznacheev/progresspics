@@ -239,6 +239,13 @@ public class CellView extends View {
         }
     }
 
+    public void scaleToFill() {
+        if (mData != null && mData.hasImage()) {
+            mData.scaleToFill(getWidth(), getHeight());
+            invalidate();
+        }
+    }
+
     private TextView getTimestampView() {
         return (TextView)((ViewGroup) getParent()).getChildAt(1);
     }

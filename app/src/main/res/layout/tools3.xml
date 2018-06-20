@@ -7,8 +7,9 @@
             android:layout_height="wrap_content"
             app:srcCompat="@android:drawable/ic_menu_delete" />
         <include layout="@layout/space" />
-        <Button
+        <ImageButton
             android:id="@+id/button_layout"
             android:layout_width="wrap_content"
-            android:layout_height="match_parent"/>
+            android:layout_height="wrap_content"
+            app:srcCompat="@drawable/ic_menu_grid" />
 </merge>

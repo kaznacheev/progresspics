@@ -12,4 +12,6 @@
     <color name="colorTimestampBackground">#60000000</color>
     <color name="colorOverlayLight">#FFFFFF</color>
     <color name="colorOverlayDark">#202020</color>
+    <color name="colorButtonFill">#FFE0E0E0</color>
+    <color name="colorButtonStroke">#FF404040</color>
 </resources>

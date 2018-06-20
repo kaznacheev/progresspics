@@ -109,6 +109,9 @@ public class MainActivity extends AppCompatActivity
         findViewById(R.id.button_text).setOnClickListener(this::text);
         findViewById(R.id.button_layout).setOnClickListener(v -> pickLayout());
 
+        findViewById(R.id.button_fit).setOnClickListener(v -> fitCell());
+        findViewById(R.id.button_fill).setOnClickListener(v -> fillCell());
+
         mGridView = findViewById(R.id.grid);
         mDateView = findViewById(R.id.date);
 
@@ -167,7 +170,7 @@ public class MainActivity extends AppCompatActivity
         // Delay until after new layout is done.
         mGridView.post(() -> {
             for (CellView cellView : mCellView) {
-                cellView.scaleToFit();
+                cellView.scaleToFill();
             }
             saveStateToFile();
         });
@@ -194,9 +197,6 @@ public class MainActivity extends AppCompatActivity
         if (mCellView != null) {
             mCellView[mActiveCellIndex].highlight(false);
         }
-
-        ((Button)findViewById(R.id.button_layout)).setText(
-                MessageFormat.format(getString(R.string.layout_pattern), mActiveColumns, mActiveRows));
 
         mCellView = new CellView[mActiveRows * mActiveColumns];
 
@@ -498,7 +498,7 @@ public class MainActivity extends AppCompatActivity
             setActiveCellData(cellData);
             CellView cellView = getActiveCellView();
             cellView.bind(cellData, this);
-            cellView.scaleToFit();
+            cellView.scaleToFill();
             if (cells.size() > 1) {
                 if (mActiveCellIndex == mCellView.length - 1) {
                     break;
@@ -572,6 +572,14 @@ public class MainActivity extends AppCompatActivity
         shareIntent.putExtra(Intent.EXTRA_STREAM, getUriForFile(this, AUTHORITY, file));
         shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
         startActivity(Intent.createChooser(shareIntent, "Share to"));
+    }
+
+    private void fitCell() {
+        getActiveCellView().scaleToFit();
+    }
+
+    private void fillCell() {
+        getActiveCellView().scaleToFill();
     }
 
     public boolean mustRequestStorageAccess(int requestCode) {
