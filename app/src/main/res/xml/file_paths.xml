@@ -1,7 +1,7 @@
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
     <files-path path="state/" name="state" />
-    <external-path path="Pictures/SnapGrubCapture/" name="capture" />
-    <external-path path="Pictures/SnapGrub/" name="collage" />
+    <external-path path="Pictures/ProgressPicsCapture/" name="capture" />
+    <external-path path="Pictures/ProgressPics/" name="collage" />
     <cache-path path="share/" name="share" />
     <cache-path path="import/" name="import" />
 </paths>

@@ -1,4 +1,4 @@
-package org.snapgrub.android;
+package org.progresspics.android;
 
 import android.annotation.SuppressLint;
 import android.graphics.Bitmap;

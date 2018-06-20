@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    package="org.snapgrub.android">
+    package="org.progresspics.android">
 
     <uses-feature android:name="android.hardware.camera"
         android:required="true" />
@@ -17,7 +17,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         tools:ignore="GoogleAppIndexingWarning">
-        <activity android:name="org.snapgrub.android.MainActivity"
+        <activity android:name="org.progresspics.android.MainActivity"
             android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -37,7 +37,7 @@
 
         <provider
             android:name="android.support.v4.content.FileProvider"
-            android:authorities="org.snapgrub.android.fileprovider"
+            android:authorities="org.progresspics.android.fileprovider"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data

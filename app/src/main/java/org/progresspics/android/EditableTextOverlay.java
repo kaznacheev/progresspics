@@ -1,4 +1,4 @@
-package org.snapgrub.android;
+package org.progresspics.android;
 
 import android.content.Context;
 import android.util.AttributeSet;

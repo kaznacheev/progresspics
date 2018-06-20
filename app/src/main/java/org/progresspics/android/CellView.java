@@ -1,4 +1,4 @@
-package org.snapgrub.android;
+package org.progresspics.android;
 
 import android.content.Context;
 import android.graphics.Canvas;
@@ -7,7 +7,6 @@ import android.graphics.Point;
 import android.graphics.Rect;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;

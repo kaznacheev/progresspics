@@ -1,4 +1,4 @@
-package org.snapgrub.android;
+package org.progresspics.android;
 
 import android.Manifest;
 import android.content.ActivityNotFoundException;
@@ -23,11 +23,9 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.TextView;
 
 import java.io.File;
-import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -42,12 +40,12 @@ import static android.support.v4.content.FileProvider.getUriForFile;
 public class MainActivity extends AppCompatActivity
         implements LayoutDialogFragment.Listener, CellView.Listener {
 
-    static final String LOG_TAG = "SnapGrub";
+    static final String LOG_TAG = "ProgressPics";
 
-    private static final String EXPORT_DIRECTORY = "SnapGrub";
+    private static final String EXPORT_DIRECTORY = "ProgressPics";
     private static final String EXPORT_PREFIX = "collage";
 
-    private static final String CAPTURE_DIRECTORY = "SnapGrubCapture";
+    private static final String CAPTURE_DIRECTORY = "ProgressPicsCapture";
     private static final String CAPTURE_PREFIX = "capture";
 
     private static final String SHARE_DIRECTORY = "share";
@@ -59,7 +57,7 @@ public class MainActivity extends AppCompatActivity
     private static final String STATE_DIRECTORY = "state";
     private static final String STATE_FILE = "state.bin";
 
-    public static final String AUTHORITY = "org.snapgrub.android.fileprovider";
+    public static final String AUTHORITY = "org.progresspics.android.fileprovider";
 
     public static final String KEY_ROWS = "rows";
     public static final String KEY_COLUMNS = "columns";

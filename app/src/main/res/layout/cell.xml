@@ -5,7 +5,7 @@
     android:layout_height="match_parent"
     android:layout_weight="1" >
 
-    <org.snapgrub.android.CellView
+    <org.progresspics.android.CellView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="horizontal"
@@ -23,7 +23,7 @@
         android:textColor="@color/colorTimestamp"
         android:textStyle="bold"/>
 
-    <org.snapgrub.android.EditableTextOverlay
+    <org.progresspics.android.EditableTextOverlay
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:paddingStart="@dimen/overlay_padding_horiz"

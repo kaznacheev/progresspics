@@ -1,8 +1,4 @@
 <resources>
-    <string name="app_name">SnapGrub</string>
-    <string name="action_export">Export</string>
-    <string name="action_snap">Snap!</string>
-    <string name="action_clear">Clear</string>
-    <string name="action_text">Text</string>
+    <string name="app_name">ProgressPics</string>
     <string name="layout_pattern">{0}x{1}</string>
 </resources>
