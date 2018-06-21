@@ -2,22 +2,20 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
     android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:paddingTop="2dp"
-    android:paddingBottom="2dp"
-    android:layout_margin="4dp"
-    android:background="#00000000">
+    android:layout_height="wrap_content">
 
-    <LinearLayout
+    <org.progresspics.android.TouchTransparentLinearLayout
         android:orientation="vertical"
-        android:layout_width="64dp"
-        android:layout_height="64dp"
-        android:layout_margin="6dp">
+        android:layout_width="@dimen/layout_picker_item_size"
+        android:layout_height="@dimen/layout_picker_item_size"
+        android:layout_margin="@dimen/layout_picker_item_margin"
+        android:paddingBottom="@dimen/layout_picker_stroke"
+        android:background="@color/colorButtonStroke">
 
         <include layout="@layout/layout_sample_row"/>
         <include layout="@layout/layout_sample_row"/>
         <include layout="@layout/layout_sample_row"/>
 
-    </LinearLayout>
+    </org.progresspics.android.TouchTransparentLinearLayout>
 
 </LinearLayout>

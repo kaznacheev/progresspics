@@ -1,6 +1,7 @@
 package org.progresspics.android;
 
 import android.Manifest;
+import android.app.Dialog;
 import android.content.ActivityNotFoundException;
 import android.content.ClipData;
 import android.content.ContentResolver;
@@ -38,8 +39,7 @@ import androidx.exifinterface.media.ExifInterface;
 
 import static android.support.v4.content.FileProvider.getUriForFile;
 
-public class MainActivity extends AppCompatActivity
-        implements LayoutDialogFragment.Listener, CellView.Listener {
+public class MainActivity extends AppCompatActivity implements CellView.Listener {
 
     static final String LOG_TAG = "ProgressPics";
 
@@ -145,10 +145,17 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void pickLayout() {
-        new LayoutDialogFragment().show(getSupportFragmentManager(), "LayoutDialog");
+        Dialog dialog = new Dialog(this);
+        View content = LayoutPicker.inflate(this,
+                cellsPerRow -> {
+                    changeLayout(cellsPerRow);
+                    dialog.dismiss();
+                });
+        dialog.addContentView(content, new ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        dialog.show();
     }
 
-    @Override
     public void changeLayout(int[] cellsPerRow) {
         if (Arrays.equals(mCellsPerRow, cellsPerRow)) {
             return;
@@ -336,6 +343,7 @@ public class MainActivity extends AppCompatActivity
 
     private void clearImportedImages() {
         File importDir = new File(getCacheDir(), IMPORT_DIRECTORY);
+        //TODO: fix NPE if importdir does not exist
         for (File file : importDir.listFiles()) {
             if (!file.delete()) {
                 Util.reportError("Failed to delete " + file);
