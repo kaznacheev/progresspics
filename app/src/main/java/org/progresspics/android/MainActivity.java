@@ -343,10 +343,12 @@ public class MainActivity extends AppCompatActivity implements CellView.Listener
 
     private void clearImportedImages() {
         File importDir = new File(getCacheDir(), IMPORT_DIRECTORY);
-        //TODO: fix NPE if importdir does not exist
-        for (File file : importDir.listFiles()) {
-            if (!file.delete()) {
-                Util.reportError("Failed to delete " + file);
+        final File[] files = importDir.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                if (!file.delete()) {
+                    Util.reportError("Failed to delete " + file);
+                }
             }
         }
     }
