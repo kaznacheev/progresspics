@@ -497,7 +497,7 @@ public class MainActivity extends AppCompatActivity implements CellView.Listener
         List<CellData> cells = new ArrayList<>();
         int uid = 0;
         for (Uri uri : uris) {
-            CellData cell = loadCell(uri, " " + uid++);
+            CellData cell = loadCell(uri, "_" + uid++);
             if (cell != null) {
                 cells.add(cell);
             }

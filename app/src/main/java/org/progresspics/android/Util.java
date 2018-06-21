@@ -36,7 +36,7 @@ class Util {
     @Nullable
     static File getTimestampedImageFile(File root, String dirName, String filePrefix, String uid) {
         File file = getFile(
-                root, dirName, filePrefix + "_" + getTimestamp() + "_" + uid + ".jpg");
+                root, dirName, filePrefix + "_" + getTimestamp() + uid + ".jpg");
         if (file == null) {
             return null;
         }
