@@ -57,6 +57,10 @@ public class CellView extends View {
         super(context, attrs, defStyleAttr, defStyleRes);
     }
 
+    public CellData getData() {
+        return mData;
+    }
+
     @Override
     public boolean dispatchTouchEvent(MotionEvent ev) {
         final int action = ev.getActionMasked();
@@ -200,16 +204,6 @@ public class CellView extends View {
         mData = data;
         mListener = listener;
 
-        TextView timestampView = getTimestampView();
-        if (mData != null && mData.getTimestamp() != null) {
-            String timestamp = mData.getTimestamp().split(" ")[1].substring(0, 5);
-            timestampView.setVisibility(View.VISIBLE);
-            timestampView.setText(timestamp);
-        } else {
-            timestampView.setVisibility(View.GONE);
-            timestampView.setText("");
-        }
-
         TextView textEditorView = getEditableTextOverlay();
         if (mData != null) {
             textEditorView.setText(mData.getText());
@@ -245,7 +239,7 @@ public class CellView extends View {
         }
     }
 
-    private TextView getTimestampView() {
+    public TextView getTimestampView() {
         return (TextView)((ViewGroup) getParent()).getChildAt(1);
     }
 

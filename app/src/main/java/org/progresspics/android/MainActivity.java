@@ -33,7 +33,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import androidx.exifinterface.media.ExifInterface;
 
@@ -171,7 +173,6 @@ public class MainActivity extends AppCompatActivity implements CellView.Listener
             }
             saveStateToFile();
         });
-        updateDate();
     }
 
     @Override
@@ -241,6 +242,8 @@ public class MainActivity extends AppCompatActivity implements CellView.Listener
         }
 
         mCellView.get(mActiveCellIndex).highlight(true);
+
+        updateTimestampDisplay();
     }
 
     @Override
@@ -293,8 +296,6 @@ public class MainActivity extends AppCompatActivity implements CellView.Listener
             }
             mCellData.add(cellData);
         }
-
-        updateDate();
     }
 
     @NonNull
@@ -340,7 +341,7 @@ public class MainActivity extends AppCompatActivity implements CellView.Listener
         clearImportedImages();
         activateCell(0);
         saveStateToFile();
-        updateDate();
+        updateTimestampDisplay();
     }
 
     private void clearImportedImages() {
@@ -361,7 +362,7 @@ public class MainActivity extends AppCompatActivity implements CellView.Listener
         getActiveCellView().bind(newCell, this);
         getActiveCellView().invalidate();
         saveStateToFile();
-        updateDate();
+        updateTimestampDisplay();
     }
 
     private void rotate(int direction) {
@@ -521,19 +522,50 @@ public class MainActivity extends AppCompatActivity implements CellView.Listener
         }
 
         saveStateToFile();
-        updateDate();
+        updateTimestampDisplay();
     }
 
-    private void updateDate() {
-        for (CellData cellData : mCellData) {
-            final String timestamp = cellData.getTimestamp();
-            if (timestamp != null) {
-                mDateView.setVisibility(View.VISIBLE);
-                mDateView.setText(timestamp.split(" ")[0].replace(':', '/'));
-                return;
+    private void updateTimestampDisplay() {
+        final List<String> validDates = new ArrayList<>();
+        for (CellView cellView : mCellView) {
+            final CellData cellData = cellView.getData();
+            if (cellData != null && cellData.getTimestamp() != null) {
+                validDates.add(cellData.getDate());
             }
         }
-        mDateView.setVisibility(View.GONE);
+
+        final Set<String> uniqueDates = new HashSet<>(validDates);
+
+        final int validDateCount = validDates.size();
+        final int uniqueDateCount = uniqueDates.size();
+
+        for (CellView cellView : mCellView) {
+            final CellData cellData = cellView.getData();
+            final TextView timestampView = cellView.getTimestampView();
+            final String displayTimestamp;
+            if (cellData == null || cellData.getTimestamp() == null) {
+                displayTimestamp = "";
+            } else if (uniqueDateCount == 1) {
+                // Don't show date in cells if it is all the same.
+                displayTimestamp = cellData.getTime();
+            } else if (uniqueDateCount == validDateCount) {
+                // Don't show time if all dates are different
+                displayTimestamp = cellData.getDate();
+            } else {
+                // Otherwise show both date and time
+                displayTimestamp = cellData.getDate() + " " + cellData.getTime();
+            }
+            timestampView.setText(displayTimestamp);
+            timestampView.setVisibility(displayTimestamp.isEmpty() ? View.GONE : View.VISIBLE);
+        }
+
+        if (uniqueDateCount == 1) {
+            // No date shown in cells, show it in the dedicated view.
+            mDateView.setVisibility(View.VISIBLE);
+            mDateView.setText(uniqueDates.iterator().next());
+        } else {
+            mDateView.setVisibility(View.GONE);
+        }
     }
 
     public void text(View v) {

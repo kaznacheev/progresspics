@@ -19,6 +19,8 @@ public class CellData {
     private Uri mUri;
     private Bitmap mBitmap;
     private String mTimestamp;
+    private String mDate;
+    private String mTime;
     private int mRotation;
     private int mPivotX;
     private int mPivotY;
@@ -51,8 +53,21 @@ public class CellData {
         return mTimestamp;
     }
 
+    public String getDate() {
+        return mDate;
+    }
+
+    public String getTime() {
+        return mTime;
+    }
+
     public void setTimestamp(String timestamp) {
         mTimestamp = timestamp;
+        if (mTimestamp != null) {
+            final String[] tokens = timestamp.split(" " );
+            mDate = tokens[0].replace(':', '/');
+            mTime = tokens[1].substring(0, 5);
+        }
     }
 
     public int getRotation() {
@@ -142,7 +157,7 @@ public class CellData {
     public void restoreState(BaseBundle b, ContentResolver contentResolver) {
         final String uri = b.getString(KEY_URI);
         load(uri != null ? Uri.parse(uri) : null, contentResolver);
-        mTimestamp = b.getString(KEY_TIMESTAMP);
+        setTimestamp(b.getString(KEY_TIMESTAMP));
         mRotation = b.getInt(KEY_ROTATION);
         mPivotX = b.getInt(KEY_PIVOT_X);
         mPivotY = b.getInt(KEY_PIVOT_Y);
