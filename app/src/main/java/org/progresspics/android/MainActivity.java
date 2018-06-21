@@ -264,7 +264,8 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void restoreInstanceState(BaseBundle inState) {
-        mCellsPerRow = inState.getIntArray(KEY_LAYOUT);
+        int[] cellsPerRow = inState.getIntArray(KEY_LAYOUT);
+        mCellsPerRow = cellsPerRow != null ? cellsPerRow : new int[] {3, 3, 3};
         mActiveCellIndex = inState.getInt(KEY_ACTIVE, mActiveCellIndex);
         int cellCount = inState.getInt(KEY_CELLS, 0);
         mCellData.clear();
