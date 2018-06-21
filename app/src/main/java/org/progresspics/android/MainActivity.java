@@ -73,6 +73,8 @@ public class MainActivity extends AppCompatActivity implements CellView.Listener
 
     public static final int JPEG_QUALITY = 85;
 
+    public static final int CACHED_IMAGE_SIZE_LIMIT = 1024;
+
     private File mStateFile;
 
     private ViewGroup mGridView;
@@ -466,8 +468,7 @@ public class MainActivity extends AppCompatActivity implements CellView.Listener
                 height = bmOptions.outHeight;
             }
 
-            int SIZE_LIMIT = 1024;
-            bmOptions.inSampleSize = Math.min(width, height) / SIZE_LIMIT;
+            bmOptions.inSampleSize = Math.min(width, height) / CACHED_IMAGE_SIZE_LIMIT;
             bmOptions.inJustDecodeBounds = false;
             Bitmap bitmap = BitmapFactory.decodeStream(resolver.openInputStream(source), null, bmOptions);
             if (bitmap == null) {
