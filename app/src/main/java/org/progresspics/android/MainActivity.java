@@ -196,7 +196,7 @@ public class MainActivity extends AppCompatActivity implements CellView.Listener
     private void setupCellLayout() {
         if (mTextEditingOn) {
             // Emulate the toggle.
-            text(findViewById(R.id.text));
+            text(findViewById(R.id.button_text));
         };
 
         if (mActiveCellIndex < mCellView.size()) {
