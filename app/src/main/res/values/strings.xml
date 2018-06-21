@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">ProgressPics</string>
     <string name="layout_pattern">{0}x{1}</string>
+    <string name="layout_picker_title">Pick the layout</string>
 </resources>
