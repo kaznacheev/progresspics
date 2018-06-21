@@ -28,12 +28,10 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import java.io.File;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -454,7 +452,7 @@ public class MainActivity extends AppCompatActivity implements CellView.Listener
             String timestamp = exif.getAttribute(ExifInterface.TAG_DATETIME);
             if (timestamp == null) {
                 Log.w(LOG_TAG, "No timestamp found in " + source);
-                timestamp = new SimpleDateFormat("YYYY:MM:dd HH:mm:ss").format(new Date());
+                timestamp = Util.getExifTimestamp();
             }
 
             int width = exif.getAttributeInt(ExifInterface.TAG_IMAGE_WIDTH, -1);
@@ -596,6 +594,7 @@ public class MainActivity extends AppCompatActivity implements CellView.Listener
             return;
         }
         Util.saveBitmap(file, createSnapshot(), JPEG_QUALITY);
+        Util.addExif(file);
         publishImage(getUriForFile(this, AUTHORITY, file));
     }
 
@@ -610,6 +609,7 @@ public class MainActivity extends AppCompatActivity implements CellView.Listener
         }
 
         Util.saveBitmap(file, createSnapshot(), JPEG_QUALITY);
+        Util.addExif(file);
 
         Intent shareIntent = new Intent(Intent.ACTION_SEND);
         shareIntent.setType("image/*");
