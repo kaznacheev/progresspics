@@ -128,21 +128,21 @@ public class MainActivity extends AppCompatActivity implements CellView.Listener
                     restoreInstanceState(persistentState);
                 }
             }
-        }
-
-        setupCellLayout();
-
-        if (Intent.ACTION_SEND.equals(action)) {
+        } else if (Intent.ACTION_SEND.equals(action)) {
             Uri uri = intent.getParcelableExtra(Intent.EXTRA_STREAM);
             if (uri != null) {
-                mGridView.post(() -> importImages(Collections.singletonList(uri)));
+                mGridView.post(() -> importAndLayoutImages(Collections.singletonList(uri)));
+                return;
             }
         } else if (Intent.ACTION_SEND_MULTIPLE.equals(action)) {
             List<Uri> uris = intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM);
             if (uris != null) {
-                mGridView.post(() -> importImages(uris));
+                mGridView.post(() -> importAndLayoutImages(uris));
+                return;
             }
         }
+
+        setupCellLayout();
     }
 
     private void pickLayout() {
@@ -493,7 +493,8 @@ public class MainActivity extends AppCompatActivity implements CellView.Listener
         }
     }
 
-    private void importImages(List<Uri> uris) {
+    @NonNull
+    private List<CellData> loadCells(List<Uri> uris) {
         List<CellData> cells = new ArrayList<>();
         int uid = 0;
         for (Uri uri : uris) {
@@ -502,9 +503,11 @@ public class MainActivity extends AppCompatActivity implements CellView.Listener
                 cells.add(cell);
             }
         }
-
         cells.sort(Comparator.comparing(CellData::getTimestamp));
+        return cells;
+    }
 
+    private void importCells(List<CellData> cells) {
         for (CellData cellData : cells) {
             setActiveCellData(cellData);
             CellView cellView = getActiveCellView();
@@ -520,6 +523,17 @@ public class MainActivity extends AppCompatActivity implements CellView.Listener
 
         saveStateToFile();
         updateTimestampDisplay();
+    }
+
+    private void importImages(List<Uri> uris) {
+        importCells(loadCells(uris));
+    }
+
+    private void importAndLayoutImages(List<Uri> uris) {
+        List<CellData> cells = loadCells(uris);
+        mCellsPerRow = LayoutPicker.findBestLayout(getResources(), cells.size());
+        setupCellLayout();
+        mGridView.post(() -> importCells(cells));
     }
 
     private void updateTimestampDisplay() {

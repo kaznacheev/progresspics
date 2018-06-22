@@ -1,6 +1,7 @@
 package org.progresspics.android;
 
 import android.content.Context;
+import android.content.res.Resources;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -15,6 +16,29 @@ public class LayoutPicker {
     }
 
     @NonNull
+    private static String[] getDescriptors(Resources resources) {
+        return resources.getStringArray(R.array.layouts_array);
+    }
+
+    public static int[] findBestLayout(Resources resources, int count) {
+        String[] descriptors = getDescriptors(resources);
+        for (String descriptor : descriptors) {
+            int[] layout = parseLayoutDescriptor(descriptor);
+            if (layout == null) {
+                continue;
+            }
+            int layoutSize = 0;
+            for (int rowSize : layout) {
+                layoutSize += rowSize;
+            }
+            if (layoutSize >= count) {
+                return layout;
+            }
+        }
+        return parseLayoutDescriptor(descriptors[descriptors.length - 1]);
+    }
+
+    @NonNull
     public static View inflate(Context context, Listener listener) {
         View content = LayoutInflater.from(context).inflate(R.layout.layout_picker, null);
 
@@ -25,8 +49,7 @@ public class LayoutPicker {
         recyclerView.setLayoutManager(layoutManager);
 
         RecyclerView.Adapter adapter = new Adapter(
-                listener,
-                context.getResources().getStringArray(R.array.layouts_array));
+                listener, getDescriptors(context.getResources()));
         recyclerView.setAdapter(adapter);
 
         return content;
