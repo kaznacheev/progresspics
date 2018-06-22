@@ -70,7 +70,7 @@ public class CellView extends View {
             mListener.onCellActivate(mIndex);
         }
 
-        if (!mData.hasImage()) {
+        if (mData == null) {
             return super.dispatchTouchEvent(ev);
         }
 
@@ -127,7 +127,7 @@ public class CellView extends View {
             case MotionEvent.ACTION_POINTER_UP:
                 if (mPinchInProgress && pointerCount == 2) {
                     mPinchInProgress = false;
-                    mData.applyScale(mPinchScale);
+                    mData.adjustScale(mPinchScale);
                     mListener.onCellViewportUpdate(mIndex);
                     mPinchScale = 1;
                     invalidate();
@@ -137,7 +137,7 @@ public class CellView extends View {
             case MotionEvent.ACTION_UP:
                 if (mDragInProgress) {
                     mDragInProgress = false;
-                    mData.applyOffset(mDragOffset);
+                    mData.adjustPivot(mDragOffset);
                     mListener.onCellViewportUpdate(mIndex);
                     mDragOffset.set(0, 0);
                     invalidate();
@@ -175,7 +175,7 @@ public class CellView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         mRect.set(0, 0, getWidth(), getHeight());
-        if (mData == null || !mData.hasImage()) {
+        if (mData == null) {
             canvas.drawRect(mRect, mBlankPaint);
             return;
         }
@@ -190,7 +190,7 @@ public class CellView extends View {
     private void drawBitmap(Canvas canvas) {
         final int viewPivotX = getWidth() / 2;
         final int viewPivotY = getHeight() / 2;
-        canvas.rotate(mData.getRotation() * 90, viewPivotX, viewPivotY);
+        canvas.rotate(mData.getRotationInDegrees(), viewPivotX, viewPivotY);
 
         float scale = mData.getScale() * mPinchScale;
         canvas.scale(scale, scale, viewPivotX, viewPivotY);
@@ -218,7 +218,7 @@ public class CellView extends View {
                 }
             });
             textEditorView.setTextColor(getResources().getColor(
-                    mData.hasImage() ? R.color.colorOverlayLight : R.color.colorOverlayDark, null));
+                    mData != null ? R.color.colorOverlayLight : R.color.colorOverlayDark, null));
         } else {
             textEditorView.setText(null);
             textEditorView.setOnFocusChangeListener(null);
@@ -228,15 +228,22 @@ public class CellView extends View {
     }
 
     public void scaleToFit() {
-        if (mData != null && mData.hasImage()) {
+        if (mData != null) {
             mData.scaleToFit(getWidth(), getHeight());
             invalidate();
         }
     }
 
     public void scaleToFill() {
-        if (mData != null && mData.hasImage()) {
+        if (mData != null) {
             mData.scaleToFill(getWidth(), getHeight());
+            invalidate();
+        }
+    }
+
+    public void rotate(int direction) {
+        if (mData != null) {
+            mData.rotate(direction);
             invalidate();
         }
     }

@@ -4,11 +4,9 @@ import android.Manifest;
 import android.app.Dialog;
 import android.content.ActivityNotFoundException;
 import android.content.ClipData;
-import android.content.ContentResolver;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.net.Uri;
 import android.os.BaseBundle;
@@ -18,11 +16,8 @@ import android.os.Environment;
 import android.os.PersistableBundle;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.media.ExifInterface;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
@@ -219,17 +214,17 @@ public class MainActivity extends AppCompatActivity implements CellView.Listener
                 if (activeColumn) {
                     final int index = mCellView.size();
                     if (index == mCellData.size()) {
-                        mCellData.add(new CellData());
+                        mCellData.add(null);
                     }
                     if (index == mCellText.size()) {
-                        mCellText.add("");
+                        mCellText.add(null);
                     }
                     cellView.bind(index, mCellData.get(index), mCellText.get(index), this);
                     mCellView.add(cellView);
                     cellWrapper.setVisibility(View.VISIBLE);
                     cellView.setClickable(true);
                 } else {
-                    cellView.bind(-1, null, null, this);
+                    cellView.bind(-1, null, null, null);
                     cellWrapper.setVisibility(View.GONE);
                 }
                 cellView.enableTextEditing(false);
@@ -266,7 +261,9 @@ public class MainActivity extends AppCompatActivity implements CellView.Listener
             } else {
                 cellBundle = new PersistableBundle();
             }
-            cellData.saveState(cellBundle);
+            if (cellData != null) {
+                cellData.save(cellBundle);
+            }
             cellBundle.putString(KEY_TEXT, mCellText.get(c));
             if (outState instanceof Bundle) {
                 ((Bundle) outState).putBundle(cellKey, (Bundle)cellBundle);
@@ -292,10 +289,10 @@ public class MainActivity extends AppCompatActivity implements CellView.Listener
             } else {
                 cellBundle = ((PersistableBundle)inState).getPersistableBundle(cellKey);
             }
-            CellData cellData = new CellData();
+            CellData cellData = null;
             String cellText = "";
             if (cellBundle != null) {
-                cellData.restoreState(cellBundle, getContentResolver());
+                cellData = CellData.fromBundle(cellBundle, getContentResolver());
                 cellText = cellBundle.getString(KEY_TEXT);
             }
             mCellData.add(cellData);
@@ -312,14 +309,6 @@ public class MainActivity extends AppCompatActivity implements CellView.Listener
         PersistableBundle state = new PersistableBundle();
         saveInstanceState(state);
         Util.writeBundle(mStateFile, state);
-    }
-
-    private void setActiveCellData(CellData cellData) {
-        mCellData.set(mActiveCellIndex, cellData);
-    }
-
-    private CellData getActiveCellData() {
-        return mCellData.get(mActiveCellIndex);
     }
 
     private CellView getActiveCellView() {
@@ -340,11 +329,9 @@ public class MainActivity extends AppCompatActivity implements CellView.Listener
         mCellData.clear();
         mCellText.clear();
         for (CellView cellView : mCellView) {
-            CellData cellData = new CellData();
-            String cellText = "";
-            cellView.bind(mCellData.size(), cellData, cellText, this);
-            mCellData.add(cellData);
-            mCellText.add(cellText);
+            cellView.bind(mCellData.size(), null, null, this);
+            mCellData.add(null);
+            mCellText.add(null);
         }
         clearImportedImages();
         activateCell(0);
@@ -365,17 +352,15 @@ public class MainActivity extends AppCompatActivity implements CellView.Listener
     }
 
     private void erase() {
-        CellData newCell = new CellData();
-        setActiveCellData(newCell);
-        mCellText.set(mActiveCellIndex, "");
-        getActiveCellView().bind(mActiveCellIndex, newCell, "", this);
+        mCellData.set(mActiveCellIndex, null);
+        mCellText.set(mActiveCellIndex, null);
+        getActiveCellView().bind(mActiveCellIndex, null, null, this);
         saveStateToFile();
         updateTimestampDisplay();
     }
 
     private void rotate(int direction) {
-        getActiveCellData().rotate(direction);
-        getActiveCellView().invalidate();
+        getActiveCellView().rotate(direction);
         saveStateToFile();
     }
 
@@ -452,77 +437,31 @@ public class MainActivity extends AppCompatActivity implements CellView.Listener
         sendBroadcast(mediaScanIntent);
     }
 
-    @Nullable
-    private CellData loadCell(Uri source, String uid) {
-        Log.v(LOG_TAG, "loading " + source);
-        try {
-            final ContentResolver resolver = getContentResolver();
-
-            final ExifInterface exif = new ExifInterface(resolver.openInputStream(source));
-
-            String timestamp = exif.getAttribute(ExifInterface.TAG_DATETIME);
-            if (timestamp == null) {
-                Log.w(LOG_TAG, "No timestamp found in " + source);
-                timestamp = Util.getExifTimestamp();
-            }
-
-            int width = exif.getAttributeInt(ExifInterface.TAG_IMAGE_WIDTH, -1);
-            int height = exif.getAttributeInt(ExifInterface.TAG_IMAGE_LENGTH, -1);
-
-            BitmapFactory.Options bmOptions = new BitmapFactory.Options();
-            if (width <= 0 || height <= 0) {
-                bmOptions.inJustDecodeBounds = true;
-                BitmapFactory.decodeStream(resolver.openInputStream(source), null, bmOptions);
-                width = bmOptions.outWidth;
-                height = bmOptions.outHeight;
-            }
-
-            bmOptions.inSampleSize = Math.min(width, height) / CACHED_IMAGE_SIZE_LIMIT;
-            bmOptions.inJustDecodeBounds = false;
-            Bitmap bitmap = BitmapFactory.decodeStream(resolver.openInputStream(source), null, bmOptions);
-            if (bitmap == null) {
-                return null;
-            }
-
-            File file = Util.getTimestampedImageFile(getCacheDir(), IMPORT_DIRECTORY, IMPORT_PREFIX, uid);
-            if (file == null) {
-                return null;
-            }
-
-            Util.saveBitmap(file, bitmap, JPEG_QUALITY);
-
-            CellData cellData = new CellData();
-            cellData.load(getUriForFile(this, AUTHORITY, file), getContentResolver());
-            if (!cellData.hasImage()) {
-                return null;
-            }
-            cellData.setTimestamp(timestamp);
-            return cellData;
-        } catch (Exception e) {
-            Util.reportException(e);
-            return null;
-        }
-    }
-
     @NonNull
     private List<CellData> loadCells(List<Uri> uris) {
         List<CellData> cells = new ArrayList<>();
-        int uid = 0;
+        int uid = 0;  // Timestamps are not sufficient for unique id here.
         for (Uri uri : uris) {
-            CellData cell = loadCell(uri, "_" + uid++);
-            if (cell != null) {
-                cells.add(cell);
+            File cacheFile = Util.getTimestampedImageFile(getCacheDir(), IMPORT_DIRECTORY, IMPORT_PREFIX, "_" + uid++);
+            if (cacheFile == null) {
+                continue;
             }
+            CellData cell = CellData.fromUri(uri, cacheFile, this);
+            if (cell == null) {
+                continue;
+            }
+            cells.add(cell);
         }
-        cells.sort(Comparator.comparing(CellData::getTimestamp));
+        cells.sort(Comparator.comparing(CellData::getDateTime));
         return cells;
     }
 
     private void importCells(List<CellData> cells) {
         for (CellData cellData : cells) {
-            setActiveCellData(cellData);
+            mCellData.set(mActiveCellIndex, cellData);
+            mCellText.set(mActiveCellIndex, null);
             CellView cellView = getActiveCellView();
-            cellView.bind(mActiveCellIndex, cellData, mCellText.get(mActiveCellIndex), this);
+            cellView.bind(mActiveCellIndex, cellData, null, this);
             cellView.scaleToFill();
             if (cells.size() > 1) {
                 if (mActiveCellIndex == mCellView.size() - 1) {
@@ -551,7 +490,7 @@ public class MainActivity extends AppCompatActivity implements CellView.Listener
         final List<String> validDates = new ArrayList<>();
         for (CellView cellView : mCellView) {
             final CellData cellData = cellView.getData();
-            if (cellData != null && cellData.getTimestamp() != null) {
+            if (cellData != null) {
                 validDates.add(cellData.getDate());
             }
         }
@@ -565,7 +504,7 @@ public class MainActivity extends AppCompatActivity implements CellView.Listener
             final CellData cellData = cellView.getData();
             final TextView timestampView = cellView.getTimestampView();
             final String displayTimestamp;
-            if (cellData == null || cellData.getTimestamp() == null) {
+            if (cellData == null) {
                 displayTimestamp = "";
             } else if (uniqueDateCount == 1) {
                 // Don't show date in cells if it is all the same.
@@ -575,7 +514,7 @@ public class MainActivity extends AppCompatActivity implements CellView.Listener
                 displayTimestamp = cellData.getDate();
             } else {
                 // Otherwise show both date and time
-                displayTimestamp = cellData.getDate() + " " + cellData.getTime();
+                displayTimestamp = cellData.getDateTime();
             }
             timestampView.setText(displayTimestamp);
             timestampView.setVisibility(displayTimestamp.isEmpty() ? View.GONE : View.VISIBLE);

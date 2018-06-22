@@ -1,86 +1,83 @@
 package org.progresspics.android;
 
 import android.content.ContentResolver;
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Point;
 import android.net.Uri;
 import android.os.BaseBundle;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.support.media.ExifInterface;
+import android.util.Log;
 
-public class CellData {
+import java.io.File;
+
+import static android.support.v4.content.FileProvider.getUriForFile;
+
+class CellData {
     private static final String KEY_URI = "uri";
-    private static final String KEY_TIMESTAMP = "timestamp";
+    private static final String KEY_DATE = "date";
+    private static final String KEY_TIME = "time";
     private static final String KEY_ROTATION = "rotation";
     private static final String KEY_PIVOT_X = "pivot_x";
     private static final String KEY_PIVOT_Y = "pivot_y";
     private static final String KEY_SCALE = "scale";
 
-    private Uri mUri;
-    private Bitmap mBitmap;
-    private String mTimestamp;
-    private String mDate;
-    private String mTime;
-    private int mRotation;
+    @NonNull
+    private final Uri mUri;
+
+    @NonNull
+    private final Bitmap mBitmap;
+
+    @NonNull
+    private final String mDate;
+
+    @NonNull
+    private final String mTime;
+
+    private int mRotation;  // In 90 degree increments.
     private int mPivotX;
     private int mPivotY;
-    private float mScale;
+    private float mScale = 1;
 
-    public CellData() {}
-
-    public void load(Uri uri, ContentResolver resolver) {
+    private CellData(@NonNull Uri uri, @NonNull Bitmap bitmap, @NonNull String date,
+                     @NonNull String time) {
         mUri = uri;
-        mBitmap = null;
-        if (mUri == null) {
-            return;
-        }
-        try {
-            mBitmap = BitmapFactory.decodeStream(resolver.openInputStream(mUri));
-        } catch (Exception ignore) {
-        }
+        mBitmap = bitmap;
+        mDate = date;
+        mTime = time;
+        resetPivot();
     }
 
-    public Bitmap getBitmap() {
+    @NonNull Bitmap getBitmap() {
         return mBitmap;
     }
 
-    public boolean hasImage() {
-        return mBitmap != null;
-    }
-
-    public String getTimestamp() {
-        return mTimestamp;
-    }
-
-    public String getDate() {
+    @NonNull String getDate() {
         return mDate;
     }
 
-    public String getTime() {
+    @NonNull String getTime() {
         return mTime;
     }
 
-    public void setTimestamp(String timestamp) {
-        mTimestamp = timestamp;
-        if (mTimestamp != null) {
-            final String[] tokens = timestamp.split(" " );
-            mDate = tokens[0].replace(':', '/');
-            mTime = tokens[1].substring(0, 5);
-        }
+    @NonNull String getDateTime() {
+        return mDate + " " + mTime;
     }
 
-    public int getRotation() {
-        return mRotation;
+    int getRotationInDegrees() {
+        return mRotation * 90;
     }
 
-    public void rotate(int direction) {
+    void rotate(int direction) {
         mRotation += (direction > 0 ? 1 : 3);
         mRotation %= 4;
     }
 
-
-    public void scaleToFit(int width, int height) {
-        mPivotX = mBitmap.getWidth() / 2;
-        mPivotY = mBitmap.getHeight() / 2;
+    void scaleToFit(int width, int height) {
+        resetPivot();
         if (mRotation % 2 == 0) {
             mScale = Math.min(width * 1f / mBitmap.getWidth(), height * 1f / mBitmap.getHeight());
         } else {
@@ -88,9 +85,8 @@ public class CellData {
         }
     }
 
-    public void scaleToFill(int width, int height) {
-        mPivotX = mBitmap.getWidth() / 2;
-        mPivotY = mBitmap.getHeight() / 2;
+    void scaleToFill(int width, int height) {
+        resetPivot();
         if (mRotation % 2 == 0) {
             mScale = Math.max(width * 1f / mBitmap.getWidth(), height * 1f / mBitmap.getHeight());
         } else {
@@ -98,23 +94,28 @@ public class CellData {
         }
     }
 
-    public int getPivotX() {
+    private void resetPivot() {
+        mPivotX = mBitmap.getWidth() / 2;
+        mPivotY = mBitmap.getHeight() / 2;
+    }
+
+    int getPivotX() {
         return mPivotX;
     }
 
-    public int getPivotY() {
+    int getPivotY() {
         return mPivotY;
     }
 
-    public float getScale() {
+    float getScale() {
         return mScale;
     }
 
-    public void applyScale(float scale) {
+    void adjustScale(float scale) {
         mScale *= scale;
     }
 
-    public void computeOffset(Point outImageOffset, float screenOffsetX, float screenOffsetY) {
+    void computeOffset(Point outImageOffset, float screenOffsetX, float screenOffsetY) {
         final int imageX = (int) (screenOffsetX / mScale);
         final int imageY = (int) (screenOffsetY / mScale);
 
@@ -139,29 +140,109 @@ public class CellData {
         }
     }
 
-    public void applyOffset(Point offset) {
+    void adjustPivot(Point offset) {
         mPivotX += offset.x;
         mPivotY += offset.y;
     }
 
-    public void restoreState(BaseBundle b, ContentResolver contentResolver) {
-        final String uri = b.getString(KEY_URI);
-        load(uri != null ? Uri.parse(uri) : null, contentResolver);
-        setTimestamp(b.getString(KEY_TIMESTAMP));
+    private void saveViewport(BaseBundle b) {
+        b.putInt(KEY_ROTATION, mRotation);
+        b.putInt(KEY_PIVOT_X, mPivotX);
+        b.putInt(KEY_PIVOT_Y, mPivotY);
+        b.putDouble(KEY_SCALE, mScale);
+    }
+
+    private void restoreViewport(BaseBundle b) {
         mRotation = b.getInt(KEY_ROTATION);
         mPivotX = b.getInt(KEY_PIVOT_X);
         mPivotY = b.getInt(KEY_PIVOT_Y);
         mScale = (float) b.getDouble(KEY_SCALE);
     }
 
-    public void saveState(BaseBundle b) {
-        if (mUri != null) {
-            b.putString(KEY_URI, mUri.toString());
+    void save(BaseBundle b) {
+        b.putString(KEY_URI, mUri.toString());
+        b.putString(KEY_DATE, mDate);
+        b.putString(KEY_TIME, mTime);
+        saveViewport(b);
+    }
+
+    static CellData fromBundle(BaseBundle b, ContentResolver resolver) {
+        final String uriString = b.getString(KEY_URI);
+        if (uriString == null) {
+            return null;
         }
-        b.putString(KEY_TIMESTAMP, mTimestamp);
-        b.putInt(KEY_ROTATION, mRotation);
-        b.putInt(KEY_PIVOT_X, mPivotX);
-        b.putInt(KEY_PIVOT_Y, mPivotY);
-        b.putDouble(KEY_SCALE, mScale);
+        final String date = b.getString(KEY_DATE);
+        if (date == null) {
+            return null;
+        }
+        final String time = b.getString(KEY_TIME);
+        if (time == null) {
+            return null;
+        }
+        try {
+            Uri uri = Uri.parse(uriString);
+            final Bitmap bitmap = BitmapFactory.decodeStream(resolver.openInputStream(uri));
+            if (bitmap == null) {
+                return null;
+            }
+            CellData cellData = new CellData( uri, bitmap, date, time);
+            cellData.restoreViewport(b);
+            return cellData;
+        } catch (Exception ignore) {
+            return null;
+        }
+    }
+
+    @Nullable
+    static CellData fromUri(Uri source, File cache, Context context) {
+        try {
+            final ContentResolver resolver = context.getContentResolver();
+
+            final ExifInterface exif = new ExifInterface(resolver.openInputStream(source));
+
+            int width = exif.getAttributeInt(ExifInterface.TAG_IMAGE_WIDTH, -1);
+            int height = exif.getAttributeInt(ExifInterface.TAG_IMAGE_LENGTH, -1);
+
+            BitmapFactory.Options bmOptions = new BitmapFactory.Options();
+            if (width <= 0 || height <= 0) {
+                bmOptions.inJustDecodeBounds = true;
+                BitmapFactory.decodeStream(resolver.openInputStream(source), null, bmOptions);
+                width = bmOptions.outWidth;
+                height = bmOptions.outHeight;
+            }
+
+            bmOptions.inSampleSize = Math.min(width, height) / MainActivity.CACHED_IMAGE_SIZE_LIMIT;
+            bmOptions.inJustDecodeBounds = false;
+            Bitmap bitmap = BitmapFactory.decodeStream(
+                    resolver.openInputStream(source), null, bmOptions);
+            if (bitmap == null) {
+                return null;
+            }
+
+            if (!Util.saveBitmap(cache, bitmap, MainActivity.JPEG_QUALITY)) {
+                return null;
+            }
+
+            String timestamp = exif.getAttribute(ExifInterface.TAG_DATETIME);
+            if (timestamp == null || timestamp.isEmpty()) {
+                Log.w(MainActivity.LOG_TAG, "No timestamp found in " + source);
+                timestamp = Util.getExifTimestamp();
+            }
+            final String date;
+            final String time;
+            final String[] tokens = timestamp.split(" " );
+            if (tokens.length == 2) {
+                date = tokens[0].replace(':', '/');
+                time = tokens[1].substring(0, 5);
+            } else {
+                date = "";
+                time = "";
+            }
+
+            return new CellData(getUriForFile(context, MainActivity.AUTHORITY, cache), bitmap, date, time);
+        } catch (Exception e) {
+            Util.reportException(e);
+            return null;
+        }
     }
 }

@@ -94,14 +94,16 @@ class Util {
         }
     }
 
-    static void saveBitmap(File file, Bitmap bitmap, int quality) {
+    static boolean saveBitmap(File file, Bitmap bitmap, int quality) {
         try {
             FileOutputStream fOut = new FileOutputStream(file);
             bitmap.compress(Bitmap.CompressFormat.JPEG, quality, fOut);
             fOut.flush();
             fOut.close();
+            return true;
         } catch (IOException e) {
             reportException(e);
+            return false;
         }
     }
 
