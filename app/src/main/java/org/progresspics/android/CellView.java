@@ -243,7 +243,7 @@ public class CellView extends View {
 
     public void rotate(int direction) {
         if (mData != null) {
-            mData.rotate(direction);
+            mData.adjustRotation(direction);
             invalidate();
         }
     }

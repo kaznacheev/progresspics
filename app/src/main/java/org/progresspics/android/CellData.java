@@ -71,7 +71,7 @@ class CellData {
         return mRotation * 90;
     }
 
-    void rotate(int direction) {
+    void adjustRotation(int direction) {
         mRotation += (direction > 0 ? 1 : 3);
         mRotation %= 4;
     }
