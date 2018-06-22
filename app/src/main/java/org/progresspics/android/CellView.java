@@ -23,11 +23,13 @@ public class CellView extends View {
 
     private Rect mRect = new Rect();
 
+    private int mIndex;
     private CellData mData;
 
     public interface Listener {
-        void onCellActivate(CellView cellView);
-        void onCellUpdate();
+        void onCellActivate(int index);
+        void onCellViewportUpdate(int index);
+        void onCellTextUpdate(int index, String text);
     }
 
     private Listener mListener;
@@ -65,7 +67,7 @@ public class CellView extends View {
     public boolean dispatchTouchEvent(MotionEvent ev) {
         final int action = ev.getActionMasked();
         if (action == MotionEvent.ACTION_DOWN) {
-            mListener.onCellActivate(this);
+            mListener.onCellActivate(mIndex);
         }
 
         if (!mData.hasImage()) {
@@ -126,7 +128,7 @@ public class CellView extends View {
                 if (mPinchInProgress && pointerCount == 2) {
                     mPinchInProgress = false;
                     mData.applyScale(mPinchScale);
-                    mListener.onCellUpdate();
+                    mListener.onCellViewportUpdate(mIndex);
                     mPinchScale = 1;
                     invalidate();
                 }
@@ -136,7 +138,7 @@ public class CellView extends View {
                 if (mDragInProgress) {
                     mDragInProgress = false;
                     mData.applyOffset(mDragOffset);
-                    mListener.onCellUpdate();
+                    mListener.onCellViewportUpdate(mIndex);
                     mDragOffset.set(0, 0);
                     invalidate();
                 }
@@ -200,25 +202,25 @@ public class CellView extends View {
                 null);
     }
 
-    public void bind(CellData data, Listener listener) {
+    public void bind(int index, CellData data, String text, Listener listener) {
+        mIndex = index;
         mData = data;
         mListener = listener;
 
         TextView textEditorView = getEditableTextOverlay();
         if (mData != null) {
-            textEditorView.setText(mData.getText());
+            textEditorView.setText(text);
             textEditorView.setOnFocusChangeListener((view, focus) -> {
                 if (focus) {
-                    mListener.onCellActivate(this);
+                    mListener.onCellActivate(mIndex);
                 } else {
-                    mData.setText(textEditorView.getText().toString());
-                    mListener.onCellUpdate();
+                    mListener.onCellTextUpdate(mIndex, textEditorView.getText().toString());
                 }
             });
             textEditorView.setTextColor(getResources().getColor(
                     mData.hasImage() ? R.color.colorOverlayLight : R.color.colorOverlayDark, null));
         } else {
-            textEditorView.setText("");
+            textEditorView.setText(null);
             textEditorView.setOnFocusChangeListener(null);
         }
 

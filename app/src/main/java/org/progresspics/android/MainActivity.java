@@ -62,6 +62,7 @@ public class MainActivity extends AppCompatActivity implements CellView.Listener
     private static final String KEY_LAYOUT = "layout";
     public static final String KEY_ACTIVE = "active";
     public static final String KEY_CELL = "cell";
+    public static final String KEY_TEXT = "text";
     private static final String KEY_CELLS = "cellCount";
 
     private static final int CAPTURE_REQUEST_CODE = 1;
@@ -80,6 +81,7 @@ public class MainActivity extends AppCompatActivity implements CellView.Listener
     private TextView mDateView;
 
     private final ArrayList<CellData> mCellData = new ArrayList<>();
+    private final ArrayList<String> mCellText = new ArrayList<>();
     private final ArrayList<CellView> mCellView = new ArrayList<>();
 
     private int[] mCellsPerRow;
@@ -173,20 +175,18 @@ public class MainActivity extends AppCompatActivity implements CellView.Listener
     }
 
     @Override
-    public void onCellActivate(CellView toActivate) {
-        int c = 0;
-        for (CellView cellView : mCellView) {
-            if (cellView == toActivate) {
-                activateCell(c);
-                return;
-            }
-            c++;
-        }
-        Util.reportError("Cannot activate cell");
+    public void onCellActivate(int index) {
+        activateCell(index);
     }
 
     @Override
-    public void onCellUpdate() {
+    public void onCellViewportUpdate(int index) {
+        saveStateToFile();
+    }
+
+    @Override
+    public void onCellTextUpdate(int index, String text) {
+        mCellText.set(index, text);
         saveStateToFile();
     }
 
@@ -221,12 +221,15 @@ public class MainActivity extends AppCompatActivity implements CellView.Listener
                     if (index == mCellData.size()) {
                         mCellData.add(new CellData());
                     }
-                    cellView.bind(mCellData.get(index), this);
+                    if (index == mCellText.size()) {
+                        mCellText.add("");
+                    }
+                    cellView.bind(index, mCellData.get(index), mCellText.get(index), this);
                     mCellView.add(cellView);
                     cellWrapper.setVisibility(View.VISIBLE);
                     cellView.setClickable(true);
                 } else {
-                    cellView.bind(null, this);
+                    cellView.bind(-1, null, null, this);
                     cellWrapper.setVisibility(View.GONE);
                 }
                 cellView.enableTextEditing(false);
@@ -256,7 +259,7 @@ public class MainActivity extends AppCompatActivity implements CellView.Listener
 
         int c = 0;
         for (CellData cellData : mCellData) {
-            final String cellKey = getCellKey(c++);
+            final String cellKey = getCellKey(c);
             final BaseBundle cellBundle;
             if (outState instanceof Bundle) {
                 cellBundle = new Bundle();
@@ -264,11 +267,13 @@ public class MainActivity extends AppCompatActivity implements CellView.Listener
                 cellBundle = new PersistableBundle();
             }
             cellData.saveState(cellBundle);
+            cellBundle.putString(KEY_TEXT, mCellText.get(c));
             if (outState instanceof Bundle) {
                 ((Bundle) outState).putBundle(cellKey, (Bundle)cellBundle);
             } else {
                 ((PersistableBundle) outState).putPersistableBundle(cellKey, (PersistableBundle)cellBundle);
             }
+            c++;
         }
     }
 
@@ -288,10 +293,13 @@ public class MainActivity extends AppCompatActivity implements CellView.Listener
                 cellBundle = ((PersistableBundle)inState).getPersistableBundle(cellKey);
             }
             CellData cellData = new CellData();
+            String cellText = "";
             if (cellBundle != null) {
                 cellData.restoreState(cellBundle, getContentResolver());
+                cellText = cellBundle.getString(KEY_TEXT);
             }
             mCellData.add(cellData);
+            mCellText.add(cellText);
         }
     }
 
@@ -330,10 +338,13 @@ public class MainActivity extends AppCompatActivity implements CellView.Listener
 
     private void clear() {
         mCellData.clear();
+        mCellText.clear();
         for (CellView cellView : mCellView) {
             CellData cellData = new CellData();
+            String cellText = "";
+            cellView.bind(mCellData.size(), cellData, cellText, this);
             mCellData.add(cellData);
-            cellView.bind(cellData, this);
+            mCellText.add(cellText);
         }
         clearImportedImages();
         activateCell(0);
@@ -356,8 +367,8 @@ public class MainActivity extends AppCompatActivity implements CellView.Listener
     private void erase() {
         CellData newCell = new CellData();
         setActiveCellData(newCell);
-        getActiveCellView().bind(newCell, this);
-        getActiveCellView().invalidate();
+        mCellText.set(mActiveCellIndex, "");
+        getActiveCellView().bind(mActiveCellIndex, newCell, "", this);
         saveStateToFile();
         updateTimestampDisplay();
     }
@@ -511,7 +522,7 @@ public class MainActivity extends AppCompatActivity implements CellView.Listener
         for (CellData cellData : cells) {
             setActiveCellData(cellData);
             CellView cellView = getActiveCellView();
-            cellView.bind(cellData, this);
+            cellView.bind(mActiveCellIndex, cellData, mCellText.get(mActiveCellIndex), this);
             cellView.scaleToFill();
             if (cells.size() > 1) {
                 if (mActiveCellIndex == mCellView.size() - 1) {
