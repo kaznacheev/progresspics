@@ -19,8 +19,10 @@ class CellView : View {
     private val tempRect = Rect()
 
     private var index: Int = 0
-    var data: CellData? = null
     private var listener: Listener? = null
+
+    var data: CellData? = null
+        private set
 
     private var downX0: Float = 0f
     private var downY0: Float = 0f
@@ -55,9 +57,8 @@ class CellView : View {
             listener?.onCellActivate(index)
         }
 
-        val data = this.data ?: return super.dispatchTouchEvent(ev)
+        val data = data ?: return super.dispatchTouchEvent(ev)
 
-        val pointerCount = ev.pointerCount
         val x0 = ev.getX(0).toInt().toFloat()
         val y0 = ev.getY(0).toInt().toFloat()
 
@@ -78,7 +79,7 @@ class CellView : View {
                         dragOffset.set(0, 0)
                         invalidate()
                     }
-                    if (pointerCount == 2) {
+                    if (ev.pointerCount == 2) {
                         downX1 = ev.getX(1)
                         downY1 = ev.getX(1)
                         pinchInProgress = true
@@ -87,10 +88,10 @@ class CellView : View {
                 }
             }
 
-            MotionEvent.ACTION_MOVE -> if (dragInProgress && pointerCount == 1) {
+            MotionEvent.ACTION_MOVE -> if (dragInProgress && ev.pointerCount == 1) {
                 data.computeOffset(dragOffset, downX0 - x0, downY0 - y0)
                 invalidate()
-            } else if (pinchInProgress && pointerCount == 2) {
+            } else if (pinchInProgress && ev.pointerCount == 2) {
                 val x1 = ev.getX(1)
                 val y1 = ev.getX(1)
 
@@ -104,7 +105,7 @@ class CellView : View {
                 invalidate()
             }
 
-            MotionEvent.ACTION_POINTER_UP -> if (pinchInProgress && pointerCount == 2) {
+            MotionEvent.ACTION_POINTER_UP -> if (pinchInProgress && ev.pointerCount == 2) {
                 pinchInProgress = false
                 data.adjustScale(pinchScale)
                 listener?.onCellViewportUpdate(index)
@@ -149,6 +150,7 @@ class CellView : View {
 
     override fun onDraw(canvas: Canvas) {
         tempRect.set(0, 0, width, height)
+        val data = data
         if (data == null) {
             canvas.drawRect(tempRect, blankPaint)
             return
@@ -157,23 +159,16 @@ class CellView : View {
         canvas.drawRect(tempRect, marginPaint)
 
         canvas.save()
-        drawBitmap(canvas)
-        canvas.restore()
-    }
-
-    private fun drawBitmap(canvas: Canvas) {
-        val data = this.data ?: return
         val viewPivotX = width / 2
         val viewPivotY = height / 2
         canvas.rotate(data.rotationInDegrees.toFloat(), viewPivotX.toFloat(), viewPivotY.toFloat())
-
         val scale = data.scale * pinchScale
         canvas.scale(scale, scale, viewPivotX.toFloat(), viewPivotY.toFloat())
-
         canvas.drawBitmap(
                 data.bitmap,
                 (viewPivotX - (data.pivotX + dragOffset.x)).toFloat(),
                 (viewPivotY - (data.pivotY + dragOffset.y)).toFloat(), null)
+        canvas.restore()
     }
 
     fun bind(index: Int, listener: Listener?) {

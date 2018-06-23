@@ -157,9 +157,10 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
 
         cellView.clear()
 
-        for (r in 0 until gridView!!.childCount) {
+        val grid = gridView!!
+        for (r in 0 until grid.childCount) {
             val activeRow = r < cellsPerRow!!.size
-            val row = gridView!!.getChildAt(r) as ViewGroup
+            val row = grid.getChildAt(r) as ViewGroup
             if (activeRow) {
                 row.visibility = View.VISIBLE
             } else {
@@ -170,34 +171,33 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
                 val activeColumn = activeRow && c < cellsPerRow!![r]
                 val cellWrapper = row.getChildAt(c) as ViewGroup
 
-                val cellView = cellWrapper.getChildAt(0) as CellView
+                val view = cellWrapper.getChildAt(0) as CellView
                 if (activeColumn) {
-                    val index = this.cellView.size
+                    val index = cellView.size
                     if (index == cellData.size) {
                         cellData.add(null)
                     }
                     if (index == cellText.size) {
                         cellText.add(null)
                     }
-                    cellView.bind(index, this)
-                    cellView.update(cellData[index], cellText[index])
-                    this.cellView.add(cellView)
+                    view.bind(index, this)
+                    view.update(cellData[index], cellText[index])
+                    cellView.add(view)
                     cellWrapper.visibility = View.VISIBLE
-                    cellView.isClickable = true
+                    view.isClickable = true
                 } else {
-                    cellView.bind(-1, null)
-                    cellView.update(null, null)
+                    view.bind(-1, null)
+                    view.update(null, null)
                     cellWrapper.visibility = View.GONE
                 }
-                cellView.enableTextEditing(false)
+                view.enableTextEditing(false)
             }
-            gridView!!.requestLayout()
         }
+        grid.requestLayout()
 
         if (activeCellIndex >= cellView.size) {
             activeCellIndex = cellView.size - 1
         }
-
         activeCellView.highlight(true)
 
         updateTimestampDisplay()
@@ -244,7 +244,8 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
             } else {
                 (inState as PersistableBundle).getPersistableBundle(cellKey)
             }
-            cellData.add(if (cellBundle != null) CellData.fromBundle(cellBundle, contentResolver) else null)
+            cellData.add(if (cellBundle != null)
+                CellData.fromBundle(cellBundle, contentResolver) else null)
             cellText.add(cellBundle?.getString(KEY_TEXT))
         }
     }
@@ -345,10 +346,8 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
                 if (data?.clipData != null) {
                     val uris = ArrayList<Uri>()
                     for (i in 0 until data.clipData.itemCount) {
-                        val uri = data.clipData.getItemAt(i).uri
-                        if (uri != null) {
-                            uris.add(uri)
-                        }
+                        val uri = data.clipData.getItemAt(i).uri ?: continue
+                        uris.add(uri)
                     }
                     importImages(uris)
                 } else if (data?.data != null) {
@@ -407,29 +406,23 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
         val validDates = cellView.filter { it.data != null }.map { it.data!!.date }
         val uniqueDates = HashSet(validDates)
 
-        val validDateCount = validDates.size
-        val uniqueDateCount = uniqueDates.size
+        val allDatesSame = uniqueDates.size == 1
+        val allDatesDifferent = uniqueDates.size == validDates.size
 
         cellView.forEach {
             val cellData = it.data
-            val displayTimestamp = when {
+            val cellTimestamp = when {
                 cellData == null -> ""
-
-                // Don't show date in cells if it is all the same.
-                uniqueDateCount == 1 -> cellData.time
-
-                // Don't show time if all dates are different
-                uniqueDateCount == validDateCount -> cellData.date
-
+                allDatesSame -> cellData.time
+                allDatesDifferent -> cellData.date
                 else -> cellData.dateTime
             }
-            it.timestampView.text = displayTimestamp
-            it.timestampView.visibility = if (displayTimestamp.isEmpty()) View.GONE else View.VISIBLE
+            it.timestampView.text = cellTimestamp
+            it.timestampView.visibility = if (cellTimestamp.isEmpty()) View.GONE else View.VISIBLE
         }
 
         val dateView = dateView!!
-        if (uniqueDateCount == 1) {
-            // No date shown in cells, show it in the dedicated view.
+        if (allDatesSame) {
             dateView.visibility = View.VISIBLE
             dateView.text = uniqueDates.iterator().next()
         } else {

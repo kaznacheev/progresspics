@@ -36,9 +36,11 @@ internal object Util {
     }
 
     @JvmOverloads
-    fun getTimestampedImageFile(root: File, dirName: String, filePrefix: String, uid: String = ""): File? {
+    fun getTimestampedImageFile(
+            root: File, dirName: String, filePrefix: String, uid: String = ""): File? {
         val file = getFile(
-                root, dirName, filePrefix + "_" + fileNameTimestamp + uid + ".jpg") ?: return null
+                root, dirName, filePrefix + "_" + fileNameTimestamp + uid + ".jpg")
+                ?: return null
         if (file.exists() && !file.delete()) {
             reportError("Failed to delete $file")
             return null
@@ -102,7 +104,8 @@ internal object Util {
         try {
             val exif = ExifInterface(file.absolutePath)
             exif.setAttribute(ExifInterface.TAG_DATETIME, exifTimestamp)
-            exif.setAttribute(ExifInterface.TAG_SOFTWARE, "ProgressPics v" + BuildConfig.VERSION_NAME)
+            exif.setAttribute(
+                    ExifInterface.TAG_SOFTWARE, "ProgressPics v" + BuildConfig.VERSION_NAME)
             exif.saveAttributes()
         } catch (e: IOException) {
             reportException(e)

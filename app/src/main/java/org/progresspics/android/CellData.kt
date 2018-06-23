@@ -145,7 +145,8 @@ class CellData private constructor(private val mUri: Uri, val bitmap: Bitmap, va
                 val bmOptions = BitmapFactory.Options()
                 if (width <= 0 || height <= 0) {
                     bmOptions.inJustDecodeBounds = true
-                    BitmapFactory.decodeStream(resolver.openInputStream(source), null, bmOptions)
+                    BitmapFactory.decodeStream(
+                            resolver.openInputStream(source), null, bmOptions)
                     width = bmOptions.outWidth
                     height = bmOptions.outHeight
                 }
@@ -175,7 +176,8 @@ class CellData private constructor(private val mUri: Uri, val bitmap: Bitmap, va
                     time = ""
                 }
 
-                return CellData(getUriForFile(context, MainActivity.AUTHORITY, cache), bitmap, date, time)
+                return CellData(
+                        getUriForFile(context, MainActivity.AUTHORITY, cache), bitmap, date, time)
             } catch (e: Exception) {
                 Util.reportException(e)
                 return null
