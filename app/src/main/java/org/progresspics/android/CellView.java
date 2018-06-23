@@ -208,7 +208,7 @@ public class CellView extends View {
         mListener = listener;
 
         TextView textEditorView = getEditableTextOverlay();
-        if (mData != null) {
+        if (mListener != null) {
             textEditorView.setText(text);
             textEditorView.setOnFocusChangeListener((view, focus) -> {
                 if (focus) {
