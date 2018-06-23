@@ -16,7 +16,9 @@ import java.util.Date
 
 internal object Util {
 
-    private val timestamp: String
+    private const val LOG_TAG = "ProgressPics"
+
+    private val fileNameTimestamp: String
         @SuppressLint("SimpleDateFormat")
         get() = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
 
@@ -36,7 +38,7 @@ internal object Util {
     @JvmOverloads
     fun getTimestampedImageFile(root: File, dirName: String, filePrefix: String, uid: String = ""): File? {
         val file = getFile(
-                root, dirName, filePrefix + "_" + timestamp + uid + ".jpg") ?: return null
+                root, dirName, filePrefix + "_" + fileNameTimestamp + uid + ".jpg") ?: return null
         if (file.exists() && !file.delete()) {
             reportError("Failed to delete $file")
             return null
@@ -109,7 +111,11 @@ internal object Util {
     }
 
     fun reportError(message: String?) {
-        Log.e(MainActivity.LOG_TAG, message)
+        Log.e(LOG_TAG, message)
+    }
+
+    fun reportWarning(message: String) {
+        Log.w(LOG_TAG, message)
     }
 
     fun reportException(e: Exception) {

@@ -13,23 +13,23 @@ import android.widget.TextView
 
 class CellView : View {
 
-    private val mMarginPaint = Paint()
-    private val mBlankPaint = Paint()
+    private val marginPaint = Paint()
+    private val blankPaint = Paint()
 
-    private val mRect = Rect()
+    private val tempRect = Rect()
 
-    private var mIndex: Int = 0
+    private var index: Int = 0
     var data: CellData? = null
-    private var mListener: Listener? = null
+    private var listener: Listener? = null
 
-    private var mDownX0: Float = 0f
-    private var mDownY0: Float = 0f
-    private var mDownX1: Float = 0f
-    private var mDownY1: Float = 0f
-    private val mDragOffset = Point()
-    private var mPinchScale = 1f
-    private var mDragInProgress: Boolean = false
-    private var mPinchInProgress: Boolean = false
+    private var downX0: Float = 0f
+    private var downY0: Float = 0f
+    private var downX1: Float = 0f
+    private var downY1: Float = 0f
+    private val dragOffset = Point()
+    private var pinchScale = 1f
+    private var dragInProgress: Boolean = false
+    private var pinchInProgress: Boolean = false
 
     val timestampView: TextView
         get() = (parent as ViewGroup).getChildAt(1) as TextView
@@ -52,7 +52,7 @@ class CellView : View {
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
         val action = ev.actionMasked
         if (action == MotionEvent.ACTION_DOWN) {
-            mListener?.onCellActivate(mIndex)
+            listener?.onCellActivate(index)
         }
 
         val data = this.data ?: return super.dispatchTouchEvent(ev)
@@ -63,40 +63,40 @@ class CellView : View {
 
         when (action) {
             MotionEvent.ACTION_DOWN -> {
-                mDownX0 = x0
-                mDownY0 = y0
-                mDragInProgress = true
-                mDragOffset.set(0, 0)
+                downX0 = x0
+                downY0 = y0
+                dragInProgress = true
+                dragOffset.set(0, 0)
             }
 
             MotionEvent.ACTION_POINTER_DOWN -> {
-                val dragDist = distance(0f, 0f, mDragOffset.x.toFloat(), mDragOffset.y.toFloat())
+                val dragDist = distance(0f, 0f, dragOffset.x.toFloat(), dragOffset.y.toFloat())
                 // Do not start the pinch if the drag is already too significant.
                 if (dragDist < 5) {
-                    if (mDragInProgress) {
-                        mDragInProgress = false
-                        mDragOffset.set(0, 0)
+                    if (dragInProgress) {
+                        dragInProgress = false
+                        dragOffset.set(0, 0)
                         invalidate()
                     }
                     if (pointerCount == 2) {
-                        mDownX1 = ev.getX(1)
-                        mDownY1 = ev.getX(1)
-                        mPinchInProgress = true
-                        mPinchScale = 1f
+                        downX1 = ev.getX(1)
+                        downY1 = ev.getX(1)
+                        pinchInProgress = true
+                        pinchScale = 1f
                     }
                 }
             }
 
-            MotionEvent.ACTION_MOVE -> if (mDragInProgress && pointerCount == 1) {
-                data.computeOffset(mDragOffset, mDownX0 - x0, mDownY0 - y0)
+            MotionEvent.ACTION_MOVE -> if (dragInProgress && pointerCount == 1) {
+                data.computeOffset(dragOffset, downX0 - x0, downY0 - y0)
                 invalidate()
-            } else if (mPinchInProgress && pointerCount == 2) {
+            } else if (pinchInProgress && pointerCount == 2) {
                 val x1 = ev.getX(1)
                 val y1 = ev.getX(1)
 
-                val distOnDown = distance(mDownX0, mDownY0, mDownX1, mDownY1)
+                val distOnDown = distance(downX0, downY0, downX1, downY1)
                 val distCurrent = distance(x0, y0, x1, y1)
-                mPinchScale = if (distOnDown > 1) {
+                pinchScale = if (distOnDown > 1) {
                     distCurrent / distOnDown
                 } else {
                     1f
@@ -104,31 +104,31 @@ class CellView : View {
                 invalidate()
             }
 
-            MotionEvent.ACTION_POINTER_UP -> if (mPinchInProgress && pointerCount == 2) {
-                mPinchInProgress = false
-                data.adjustScale(mPinchScale)
-                mListener?.onCellViewportUpdate(mIndex)
-                mPinchScale = 1f
+            MotionEvent.ACTION_POINTER_UP -> if (pinchInProgress && pointerCount == 2) {
+                pinchInProgress = false
+                data.adjustScale(pinchScale)
+                listener?.onCellViewportUpdate(index)
+                pinchScale = 1f
                 invalidate()
             }
 
-            MotionEvent.ACTION_UP -> if (mDragInProgress) {
-                mDragInProgress = false
-                data.adjustPivot(mDragOffset)
-                mListener?.onCellViewportUpdate(mIndex)
-                mDragOffset.set(0, 0)
+            MotionEvent.ACTION_UP -> if (dragInProgress) {
+                dragInProgress = false
+                data.adjustPivot(dragOffset)
+                listener?.onCellViewportUpdate(index)
+                dragOffset.set(0, 0)
                 invalidate()
             }
 
             MotionEvent.ACTION_CANCEL -> {
-                if (mPinchInProgress) {
-                    mPinchInProgress = false
-                    mPinchScale = 1f
+                if (pinchInProgress) {
+                    pinchInProgress = false
+                    pinchScale = 1f
                     invalidate()
                 }
-                if (mDragInProgress) {
-                    mDragInProgress = false
-                    mDragOffset.set(0, 0)
+                if (dragInProgress) {
+                    dragInProgress = false
+                    dragOffset.set(0, 0)
                     invalidate()
                 }
             }
@@ -140,21 +140,21 @@ class CellView : View {
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
 
-        mMarginPaint.style = Paint.Style.FILL
-        mMarginPaint.color = resources.getColor(R.color.colorCollageBackground, null)
+        marginPaint.style = Paint.Style.FILL
+        marginPaint.color = resources.getColor(R.color.colorCollageBackground, null)
 
-        mBlankPaint.style = Paint.Style.FILL
-        mBlankPaint.color = resources.getColor(R.color.colorBlankCell, null)
+        blankPaint.style = Paint.Style.FILL
+        blankPaint.color = resources.getColor(R.color.colorBlankCell, null)
     }
 
     override fun onDraw(canvas: Canvas) {
-        mRect.set(0, 0, width, height)
+        tempRect.set(0, 0, width, height)
         if (data == null) {
-            canvas.drawRect(mRect, mBlankPaint)
+            canvas.drawRect(tempRect, blankPaint)
             return
         }
 
-        canvas.drawRect(mRect, mMarginPaint)
+        canvas.drawRect(tempRect, marginPaint)
 
         canvas.save()
         drawBitmap(canvas)
@@ -167,30 +167,34 @@ class CellView : View {
         val viewPivotY = height / 2
         canvas.rotate(data.rotationInDegrees.toFloat(), viewPivotX.toFloat(), viewPivotY.toFloat())
 
-        val scale = data.scale * mPinchScale
+        val scale = data.scale * pinchScale
         canvas.scale(scale, scale, viewPivotX.toFloat(), viewPivotY.toFloat())
 
         canvas.drawBitmap(
                 data.bitmap,
-                (viewPivotX - (data.pivotX + mDragOffset.x)).toFloat(),
-                (viewPivotY - (data.pivotY + mDragOffset.y)).toFloat(), null)
+                (viewPivotX - (data.pivotX + dragOffset.x)).toFloat(),
+                (viewPivotY - (data.pivotY + dragOffset.y)).toFloat(), null)
     }
 
-    fun bind(index: Int, data: CellData?, text: String?, listener: Listener?) {
-        mIndex = index
+    fun bind(index: Int, listener: Listener?) {
+        this.index = index
+        this.listener = listener
+    }
+
+    fun update(data: CellData?, text: String?) {
         this.data = data
-        mListener = listener
 
         val textEditorView = editableTextOverlay
+        val listener = this.listener
         if (listener != null) {
             textEditorView.setText(text)
             textEditorView.setTextColor(resources.getColor(
-                    if (this.data != null) R.color.colorOverlayLight else R.color.colorOverlayDark, null))
+                    if (data != null) R.color.colorOverlayLight else R.color.colorOverlayDark, null))
             textEditorView.setOnFocusChangeListener { _, focus ->
                 if (focus) {
-                    listener.onCellActivate(mIndex)
+                    listener.onCellActivate(index)
                 } else {
-                    listener.onCellTextUpdate(mIndex, textEditorView.text.toString())
+                    listener.onCellTextUpdate(index, textEditorView.text.toString())
                 }
             }
         } else {

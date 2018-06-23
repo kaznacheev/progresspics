@@ -76,8 +76,8 @@ class CellData private constructor(private val mUri: Uri, val bitmap: Bitmap, va
         pivotY += offset.y
     }
 
-    fun adjustScale(scale: Float) {
-        this.scale *= scale
+    fun adjustScale(factor: Float) {
+        scale *= factor
     }
 
     fun adjustRotation(direction: Int) {
@@ -115,6 +115,8 @@ class CellData private constructor(private val mUri: Uri, val bitmap: Bitmap, va
         private const val KEY_SCALE = "scale"
         private const val KEY_ROTATION = "rotation"
 
+        private const val CACHED_IMAGE_SIZE_LIMIT = 1024
+
         fun fromBundle(b: BaseBundle, resolver: ContentResolver): CellData? {
             val uriString = b.getString(KEY_URI) ?: return null
             val date = b.getString(KEY_DATE) ?: return null
@@ -129,7 +131,6 @@ class CellData private constructor(private val mUri: Uri, val bitmap: Bitmap, va
             } catch (ignore: Exception) {
                 return null
             }
-
         }
 
         fun fromUri(source: Uri, cache: File, context: Context): CellData? {
@@ -149,7 +150,7 @@ class CellData private constructor(private val mUri: Uri, val bitmap: Bitmap, va
                     height = bmOptions.outHeight
                 }
 
-                bmOptions.inSampleSize = Math.min(width, height) / MainActivity.CACHED_IMAGE_SIZE_LIMIT
+                bmOptions.inSampleSize = Math.min(width, height) / CACHED_IMAGE_SIZE_LIMIT
                 bmOptions.inJustDecodeBounds = false
                 val bitmap = BitmapFactory.decodeStream(
                         resolver.openInputStream(source), null, bmOptions) ?: return null
@@ -160,7 +161,7 @@ class CellData private constructor(private val mUri: Uri, val bitmap: Bitmap, va
 
                 var timestamp = exif.getAttribute(ExifInterface.TAG_DATETIME)
                 if (timestamp == null || timestamp.isEmpty()) {
-                    Log.w(MainActivity.LOG_TAG, "No timestamp found in $source")
+                    Util.reportWarning("No timestamp found in $source")
                     timestamp = Util.exifTimestamp
                 }
                 val date: String

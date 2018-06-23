@@ -8,6 +8,7 @@ import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import java.util.Arrays
 
 object LayoutPicker {
 
@@ -23,10 +24,7 @@ object LayoutPicker {
         val descriptors = getDescriptors(resources)
         for (descriptor in descriptors) {
             val layout = parseLayoutDescriptor(descriptor)
-            var layoutSize = 0
-            for (rowSize in layout) {
-                layoutSize += rowSize
-            }
+            val layoutSize = layout.fold(0) { sum, value -> sum + value }
             if (layoutSize >= count) {
                 return layout
             }
@@ -40,31 +38,32 @@ object LayoutPicker {
 
         val recyclerView = content.findViewById<RecyclerView>(R.id.layout_list)
         recyclerView.setHasFixedSize(true)
-
-        val layoutManager = GridLayoutManager(context, 4)
-        recyclerView.layoutManager = layoutManager
-
-        val adapter = Adapter(
-                listener, getDescriptors(context.resources))
-        recyclerView.adapter = adapter
+        recyclerView.layoutManager = GridLayoutManager(context, 4)
+        recyclerView.adapter = Adapter(listener, getDescriptors(context.resources))
 
         return content
     }
 
-    private class Adapter internal constructor(private val mListener: Listener, private val mDescriptors: Array<String>) : RecyclerView.Adapter<ViewHolder>() {
+    private class Adapter internal constructor(
+            private val listener: Listener, private val descriptors: Array<String>)
+        : RecyclerView.Adapter<ViewHolder>() {
+
+        override fun getItemCount(): Int {
+            return descriptors.size
+        }
+
         @SuppressLint("InflateParams")
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-            val inflater = LayoutInflater.from(parent.context)
-            val itemView = inflater.inflate(R.layout.layout_sample_grid, null)
-            return ViewHolder(itemView)
+            return ViewHolder(LayoutInflater.from(parent.context).inflate(
+                    R.layout.layout_sample_grid, null))
         }
 
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-            val cellsPerRow = parseLayoutDescriptor(mDescriptors[position])
+            val cellsPerRow = parseLayoutDescriptor(descriptors[position])
 
-            holder.mItemView.setOnClickListener { mListener.onItemClicked(cellsPerRow) }
+            holder.itemView.setOnClickListener { listener.onItemClicked(cellsPerRow) }
 
-            val grid = (holder.mItemView as ViewGroup).getChildAt(0) as ViewGroup
+            val grid = (holder.itemView as ViewGroup).getChildAt(0) as ViewGroup
 
             for (r in 0 until grid.childCount) {
                 val activeRow = r < cellsPerRow.size
@@ -77,33 +76,21 @@ object LayoutPicker {
                 }
             }
         }
-
-        override fun getItemCount(): Int {
-            return mDescriptors.size
-        }
     }
 
-    private class ViewHolder internal constructor(internal var mItemView: View) : RecyclerView.ViewHolder(mItemView)
+    private class ViewHolder internal constructor(itemView: View)
+        : RecyclerView.ViewHolder(itemView)
 
     private fun parseLayoutDescriptor(descriptor: String): IntArray {
-        var parts = descriptor.split("x".toRegex()).toTypedArray()
-        if (parts.size == 2) {
-            val rows = Integer.parseInt(parts[1])
-            val columns = Integer.parseInt(parts[0])
+        val dimensions = descriptor.split("x".toRegex()).toTypedArray()
+        if (dimensions.size == 2) {
+            val rows = Integer.parseInt(dimensions[1])
+            val columns = Integer.parseInt(dimensions[0])
             val cellsPerRow = IntArray(rows)
-            for (r in 0 until rows) {
-                cellsPerRow[r] = columns
-            }
+            Arrays.fill(cellsPerRow, columns)
             return cellsPerRow
         }
-        parts = descriptor.split("\\+".toRegex()).toTypedArray()
-        if (parts.size > 1) {
-            val cellsPerRow = IntArray(parts.size)
-            for (r in parts.indices) {
-                cellsPerRow[r] = Integer.parseInt(parts[r])
-            }
-            return cellsPerRow
-        }
-        return IntArray(0)
+        val rowCounts = descriptor.split("\\+".toRegex()).toTypedArray()
+        return rowCounts.map { Integer.parseInt(it) }.toIntArray()
     }
 }

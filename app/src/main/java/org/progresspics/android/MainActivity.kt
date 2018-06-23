@@ -30,35 +30,35 @@ import android.support.v4.content.FileProvider.getUriForFile
 
 class MainActivity : AppCompatActivity(), CellView.Listener {
 
-    private var mStateFile: File? = null
+    private var stateFile: File? = null
 
-    private var mGridView: ViewGroup? = null
-    private var mDateView: TextView? = null
+    private var gridView: ViewGroup? = null
+    private var dateView: TextView? = null
 
-    private val mCellData = ArrayList<CellData?>()
-    private val mCellText = ArrayList<String?>()
-    private val mCellView = ArrayList<CellView>()
+    private val cellData = ArrayList<CellData?>()
+    private val cellText = ArrayList<String?>()
+    private val cellView = ArrayList<CellView>()
 
-    private var mCellsPerRow: IntArray? = null
-    private var mActiveCellIndex: Int = 0
+    private var cellsPerRow: IntArray? = null
+    private var activeCellIndex: Int = 0
 
-    private var mCaptureUri: Uri? = null
-    private var mTextEditingOn: Boolean = false  // Not persistable on purpose.
+    private var captureUri: Uri? = null
+    private var textEditingOn: Boolean = false  // Not persistable on purpose.
 
     private val activeCellView: CellView
-        get() = mCellView[mActiveCellIndex]
+        get() = cellView[activeCellIndex]
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        findViewById<View>(R.id.button_clear).setOnClickListener { clear() }
+        findViewById<View>(R.id.button_clear).setOnClickListener { clearAll() }
         findViewById<View>(R.id.button_snap).setOnClickListener { snap() }
         findViewById<View>(R.id.button_pick).setOnClickListener { pick() }
         findViewById<View>(R.id.button_save).setOnClickListener { save() }
         findViewById<View>(R.id.button_share).setOnClickListener { share() }
 
-        findViewById<View>(R.id.button_erase).setOnClickListener { erase() }
+        findViewById<View>(R.id.button_erase).setOnClickListener { clearActive() }
         findViewById<View>(R.id.button_rotate_left).setOnClickListener { rotate(1) }
         findViewById<View>(R.id.button_rotate_right).setOnClickListener { rotate(-1) }
         findViewById<View>(R.id.button_text).setOnClickListener { text(it) }
@@ -67,37 +67,38 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
         findViewById<View>(R.id.button_fit).setOnClickListener { fitCell() }
         findViewById<View>(R.id.button_fill).setOnClickListener { fillCell() }
 
-        mGridView = findViewById(R.id.grid)
-        mDateView = findViewById(R.id.date)
+        gridView = findViewById(R.id.grid)
+        dateView = findViewById(R.id.date)
 
-        mCellsPerRow = intArrayOf(3, 3, 3)
-        mActiveCellIndex = 0
+        cellsPerRow = intArrayOf(3, 3, 3)
+        activeCellIndex = 0
 
-        mStateFile = Util.getFile(filesDir, STATE_DIRECTORY, STATE_FILE)
+        stateFile = Util.getFile(filesDir, STATE_DIRECTORY, STATE_FILE)
 
-        val intent = intent
-        val action = intent.action
-
-        if (Intent.ACTION_MAIN == action) {
-            if (savedInstanceState != null) {
-                restoreInstanceState(savedInstanceState)
-            } else if (mStateFile!!.exists()) {
-                val persistentState = Util.readBundle(mStateFile!!)
-                if (persistentState != null) {
-                    restoreInstanceState(persistentState)
+        when (intent.action) {
+            Intent.ACTION_MAIN -> {
+                if (savedInstanceState != null) {
+                    restoreInstanceState(savedInstanceState)
+                } else if (stateFile!!.exists()) {
+                    val persistentState = Util.readBundle(stateFile!!)
+                    if (persistentState != null) {
+                        restoreInstanceState(persistentState)
+                    }
                 }
             }
-        } else if (Intent.ACTION_SEND == action) {
-            val uri = intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)
-            if (uri != null) {
-                mGridView!!.post { importAndLayoutImages(listOf(uri)) }
-                return
+            Intent.ACTION_SEND -> {
+                val uri = intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)
+                if (uri != null) {
+                    gridView!!.post { importAndLayoutImages(listOf(uri)) }
+                    return
+                }
             }
-        } else if (Intent.ACTION_SEND_MULTIPLE == action) {
-            val uris = intent.getParcelableArrayListExtra<Uri>(Intent.EXTRA_STREAM)
-            if (uris != null) {
-                mGridView!!.post { importAndLayoutImages(uris) }
-                return
+            Intent.ACTION_SEND_MULTIPLE -> {
+                val uris = intent.getParcelableArrayListExtra<Uri>(Intent.EXTRA_STREAM)
+                if (uris != null) {
+                    gridView!!.post { importAndLayoutImages(uris) }
+                    return
+                }
             }
         }
 
@@ -110,7 +111,7 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
                 object: LayoutPicker.Listener {
                     override fun onItemClicked(cellsPerRow: IntArray) {
                         changeLayout(cellsPerRow)
-                        dialog.dismiss();
+                        dialog.dismiss()
                     }
                 })
         dialog.addContentView(content, ViewGroup.LayoutParams(
@@ -119,16 +120,14 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
     }
 
     fun changeLayout(cellsPerRow: IntArray) {
-        if (Arrays.equals(mCellsPerRow, cellsPerRow)) {
+        if (Arrays.equals(this.cellsPerRow, cellsPerRow)) {
             return
         }
-        mCellsPerRow = cellsPerRow
+        this.cellsPerRow = cellsPerRow
         setupCellLayout()
         // Delay until after new layout is done.
-        mGridView!!.post {
-            for (cellView in mCellView) {
-                cellView.scaleToFill()
-            }
+        gridView!!.post {
+            cellView.forEach { it.scaleToFill() }
             saveStateToFile()
         }
     }
@@ -142,25 +141,25 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
     }
 
     override fun onCellTextUpdate(index: Int, text: String) {
-        mCellText[index] = text
+        cellText[index] = text
         saveStateToFile()
     }
 
     private fun setupCellLayout() {
-        if (mTextEditingOn) {
+        if (textEditingOn) {
             // Emulate the toggle.
             text(findViewById(R.id.button_text))
         }
 
-        if (mActiveCellIndex < mCellView.size) {
-            mCellView[mActiveCellIndex].highlight(false)
+        if (activeCellIndex < cellView.size) {
+            activeCellView.highlight(false)
         }
 
-        mCellView.clear()
+        cellView.clear()
 
-        for (r in 0 until mGridView!!.childCount) {
-            val activeRow = r < mCellsPerRow!!.size
-            val row = mGridView!!.getChildAt(r) as ViewGroup
+        for (r in 0 until gridView!!.childCount) {
+            val activeRow = r < cellsPerRow!!.size
+            val row = gridView!!.getChildAt(r) as ViewGroup
             if (activeRow) {
                 row.visibility = View.VISIBLE
             } else {
@@ -168,36 +167,38 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
             }
 
             for (c in 0 until row.childCount) {
-                val activeColumn = activeRow && c < mCellsPerRow!![r]
+                val activeColumn = activeRow && c < cellsPerRow!![r]
                 val cellWrapper = row.getChildAt(c) as ViewGroup
 
                 val cellView = cellWrapper.getChildAt(0) as CellView
                 if (activeColumn) {
-                    val index = mCellView.size
-                    if (index == mCellData.size) {
-                        mCellData.add(null)
+                    val index = this.cellView.size
+                    if (index == cellData.size) {
+                        cellData.add(null)
                     }
-                    if (index == mCellText.size) {
-                        mCellText.add(null)
+                    if (index == cellText.size) {
+                        cellText.add(null)
                     }
-                    cellView.bind(index, mCellData[index], mCellText[index], this)
-                    mCellView.add(cellView)
+                    cellView.bind(index, this)
+                    cellView.update(cellData[index], cellText[index])
+                    this.cellView.add(cellView)
                     cellWrapper.visibility = View.VISIBLE
                     cellView.isClickable = true
                 } else {
-                    cellView.bind(-1, null, null, null)
+                    cellView.bind(-1, null)
+                    cellView.update(null, null)
                     cellWrapper.visibility = View.GONE
                 }
                 cellView.enableTextEditing(false)
             }
-            mGridView!!.requestLayout()
+            gridView!!.requestLayout()
         }
 
-        if (mActiveCellIndex >= mCellView.size) {
-            mActiveCellIndex = mCellView.size - 1
+        if (activeCellIndex >= cellView.size) {
+            activeCellIndex = cellView.size - 1
         }
 
-        mCellView[mActiveCellIndex].highlight(true)
+        activeCellView.highlight(true)
 
         updateTimestampDisplay()
     }
@@ -208,72 +209,69 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
     }
 
     private fun saveInstanceState(outState: BaseBundle) {
-        outState.putIntArray(KEY_LAYOUT, mCellsPerRow)
-        outState.putInt(KEY_ACTIVE, mActiveCellIndex)
-        outState.putInt(KEY_CELLS, mCellData.size)
+        outState.putIntArray(KEY_LAYOUT, cellsPerRow)
+        outState.putInt(KEY_ACTIVE, activeCellIndex)
+        outState.putInt(KEY_CELLS, cellData.size)
 
-        for ((c, cellData) in mCellData.withIndex()) {
+        for ((c, cellData) in cellData.withIndex()) {
             val cellKey = getCellKey(c)
             val cellBundle: BaseBundle = if (outState is Bundle) Bundle() else PersistableBundle()
             cellData?.save(cellBundle)
-            cellBundle.putString(KEY_TEXT, mCellText[c])
+            if (cellText[c] != null) cellBundle.putString(KEY_TEXT, cellText[c])
             if (outState is Bundle) {
                 outState.putBundle(cellKey, cellBundle as Bundle)
             } else {
-                (outState as PersistableBundle).putPersistableBundle(cellKey, cellBundle as PersistableBundle)
+                (outState as PersistableBundle).putPersistableBundle(
+                        cellKey, cellBundle as PersistableBundle)
             }
         }
     }
 
     private fun restoreInstanceState(inState: BaseBundle) {
-        val cellsPerRow = inState.getIntArray(KEY_LAYOUT)
-        mCellsPerRow = cellsPerRow ?: intArrayOf(3, 3, 3)
-        mActiveCellIndex = inState.getInt(KEY_ACTIVE, mActiveCellIndex)
+        if (!cellData.isEmpty() || !cellText.isEmpty()) {
+            Util.reportError("restoreInstanceState called with non-empty state")
+            return
+        }
+
+        cellsPerRow = inState.getIntArray(KEY_LAYOUT) ?: intArrayOf(3, 3, 3)
+        activeCellIndex = inState.getInt(KEY_ACTIVE, activeCellIndex)
         val cellCount = inState.getInt(KEY_CELLS, 0)
-        mCellData.clear()
 
         for (c in 0 until cellCount) {
             val cellKey = getCellKey(c)
-            val cellBundle: BaseBundle?
-            cellBundle = if (inState is Bundle) {
+            val cellBundle: BaseBundle? = if (inState is Bundle) {
                 inState.getBundle(cellKey)
             } else {
                 (inState as PersistableBundle).getPersistableBundle(cellKey)
             }
-            var cellData: CellData? = null
-            var cellText: String? = ""
-            if (cellBundle != null) {
-                cellData = CellData.fromBundle(cellBundle, contentResolver)
-                cellText = cellBundle.getString(KEY_TEXT)
-            }
-            mCellData.add(cellData)
-            mCellText.add(cellText)
+            cellData.add(if (cellBundle != null) CellData.fromBundle(cellBundle, contentResolver) else null)
+            cellText.add(cellBundle?.getString(KEY_TEXT))
         }
     }
 
     private fun saveStateToFile() {
         val state = PersistableBundle()
         saveInstanceState(state)
-        Util.writeBundle(mStateFile!!, state)
+        Util.writeBundle(stateFile!!, state)
     }
 
     private fun activateCell(index: Int) {
-        if (mActiveCellIndex == index) {
+        if (activeCellIndex == index) {
             return
         }
         activeCellView.highlight(false)
-        mActiveCellIndex = index
+        activeCellIndex = index
         activeCellView.highlight(true)
         saveStateToFile()
     }
 
-    private fun clear() {
-        mCellData.clear()
-        mCellText.clear()
-        for (cellView in mCellView) {
-            cellView.bind(mCellData.size, null, null, this)
-            mCellData.add(null)
-            mCellText.add(null)
+    private fun clearAll() {
+        cellData.clear()
+        cellText.clear()
+        cellView.forEach {
+            it.update(null, null)
+            cellData.add(null)
+            cellText.add(null)
         }
         clearImportedImages()
         activateCell(0)
@@ -282,21 +280,15 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
     }
 
     private fun clearImportedImages() {
-        val importDir = File(cacheDir, IMPORT_DIRECTORY)
-        val files = importDir.listFiles()
-        if (files != null) {
-            for (file in files) {
-                if (!file.delete()) {
-                    Util.reportError("Failed to delete $file")
-                }
-            }
+        File(cacheDir, IMPORT_DIRECTORY).listFiles()?.forEach {
+            if (!it.delete()) Util.reportError("Failed to delete $it")
         }
     }
 
-    private fun erase() {
-        mCellData[mActiveCellIndex] = null
-        mCellText[mActiveCellIndex] = null
-        activeCellView.bind(mActiveCellIndex, null, null, this)
+    private fun clearActive() {
+        cellData[activeCellIndex] = null
+        cellText[activeCellIndex] = null
+        activeCellView.update(null, null)
         saveStateToFile()
         updateTimestampDisplay()
     }
@@ -314,29 +306,28 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
         val file = Util.getTimestampedImageFile(Environment.getExternalStoragePublicDirectory(
                 Environment.DIRECTORY_PICTURES), CAPTURE_DIRECTORY, CAPTURE_PREFIX) ?: return
 
-        mCaptureUri = getUriForFile(this, AUTHORITY, file)
+        captureUri = getUriForFile(this, AUTHORITY, file)
 
-        val captureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-        captureIntent.putExtra(MediaStore.EXTRA_OUTPUT, mCaptureUri)
-        captureIntent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+        intent.putExtra(MediaStore.EXTRA_OUTPUT, captureUri)
+        intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
+                Intent.FLAG_GRANT_READ_URI_PERMISSION)
         try {
-            startActivityForResult(captureIntent, CAPTURE_REQUEST_CODE)
+            startActivityForResult(intent, CAPTURE_REQUEST_CODE)
         } catch (e: ActivityNotFoundException) {
             Util.reportException(e)
         }
-
     }
 
     private fun pick() {
-        val pickIntent = Intent(Intent.ACTION_PICK,
+        val intent = Intent(Intent.ACTION_PICK,
                 MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
-        pickIntent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+        intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
         try {
-            startActivityForResult(pickIntent, PICK_REQUEST_CODE)
+            startActivityForResult(intent, PICK_REQUEST_CODE)
         } catch (e: ActivityNotFoundException) {
             Util.reportException(e)
         }
-
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -346,16 +337,15 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
 
         when (requestCode) {
             CAPTURE_REQUEST_CODE -> {
-                importImages(listOf(mCaptureUri?: return))
-                publishImage(mCaptureUri)
+                importImages(listOf(captureUri?: return))
+                publishImage(captureUri)
             }
 
             PICK_REQUEST_CODE -> {
-                val clipData = data?.clipData
-                if (clipData != null) {
+                if (data?.clipData != null) {
                     val uris = ArrayList<Uri>()
-                    for (i in 0 until clipData.itemCount) {
-                        val uri = clipData.getItemAt(i).uri
+                    for (i in 0 until data.clipData.itemCount) {
+                        val uri = data.clipData.getItemAt(i).uri
                         if (uri != null) {
                             uris.add(uri)
                         }
@@ -369,15 +359,16 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
     }
 
     private fun publishImage(uri: Uri?) {
-        val mediaScanIntent = Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE)
-        mediaScanIntent.data = uri
-        sendBroadcast(mediaScanIntent)
+        val intent = Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE)
+        intent.data = uri
+        sendBroadcast(intent)
     }
 
     private fun loadCells(uris: List<Uri>): List<CellData> {
         val cells = ArrayList<CellData>()
         for ((uid, uri) in uris.withIndex()) {
-            val cacheFile = Util.getTimestampedImageFile(cacheDir, IMPORT_DIRECTORY, IMPORT_PREFIX, "_$uid")
+            val cacheFile = Util.getTimestampedImageFile(
+                    cacheDir, IMPORT_DIRECTORY, IMPORT_PREFIX, "_$uid")
                     ?: continue
             val cell = CellData.fromUri(uri, cacheFile, this) ?: continue
             cells.add(cell)
@@ -387,20 +378,16 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
     }
 
     private fun importCells(cells: List<CellData>) {
-        for (cellData in cells) {
-            mCellData[mActiveCellIndex] = cellData
-            mCellText[mActiveCellIndex] = null
-            val cellView = activeCellView
-            cellView.bind(mActiveCellIndex, cellData, null, this)
-            cellView.scaleToFill()
-            if (cells.size > 1) {
-                if (mActiveCellIndex == mCellView.size - 1) {
-                    break
-                }
-                activateCell(mActiveCellIndex + 1)
+        cells.forEach {
+            val text = null
+            cellData[activeCellIndex] = it
+            cellText[activeCellIndex] = text
+            activeCellView.update(it, text)
+            activeCellView.scaleToFill()
+            if (cells.size != 1 && activeCellIndex < cellView.size - 1) {
+                activateCell(activeCellIndex + 1)
             }
         }
-
         saveStateToFile()
         updateTimestampDisplay()
     }
@@ -409,67 +396,62 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
         importCells(loadCells(uris))
     }
 
-    private fun importAndLayoutImages(uris: List<Uri>?) {
-        val cells = loadCells(uris!!)
-        mCellsPerRow = LayoutPicker.findBestLayout(resources, cells.size)
+    private fun importAndLayoutImages(uris: List<Uri>) {
+        val cells = loadCells(uris)
+        cellsPerRow = LayoutPicker.findBestLayout(resources, cells.size)
         setupCellLayout()
-        mGridView!!.post { importCells(cells) }
+        gridView!!.post { importCells(cells) }
     }
 
     private fun updateTimestampDisplay() {
-        val validDates = ArrayList<String>()
-        for (cellView in mCellView) {
-            val cellData = cellView.data
-            if (cellData != null) {
-                validDates.add(cellData.date)
-            }
-        }
-
+        val validDates = cellView.filter { it.data != null }.map { it.data!!.date }
         val uniqueDates = HashSet(validDates)
 
         val validDateCount = validDates.size
         val uniqueDateCount = uniqueDates.size
 
-        for (cellView in mCellView) {
-            val cellData = cellView.data
-            val timestampView = cellView.timestampView
-            val displayTimestamp: String
-            displayTimestamp = when {
+        cellView.forEach {
+            val cellData = it.data
+            val displayTimestamp = when {
                 cellData == null -> ""
+
                 // Don't show date in cells if it is all the same.
                 uniqueDateCount == 1 -> cellData.time
+
                 // Don't show time if all dates are different
                 uniqueDateCount == validDateCount -> cellData.date
+
                 else -> cellData.dateTime
             }
-            timestampView.text = displayTimestamp
-            timestampView.visibility = if (displayTimestamp.isEmpty()) View.GONE else View.VISIBLE
+            it.timestampView.text = displayTimestamp
+            it.timestampView.visibility = if (displayTimestamp.isEmpty()) View.GONE else View.VISIBLE
         }
 
+        val dateView = dateView!!
         if (uniqueDateCount == 1) {
             // No date shown in cells, show it in the dedicated view.
-            mDateView!!.visibility = View.VISIBLE
-            mDateView!!.text = uniqueDates.iterator().next()
+            dateView.visibility = View.VISIBLE
+            dateView.text = uniqueDates.iterator().next()
         } else {
-            mDateView!!.visibility = View.GONE
+            dateView.visibility = View.GONE
         }
     }
 
     fun text(v: View) {
-        mTextEditingOn = !mTextEditingOn
+        textEditingOn = !textEditingOn
         // TODO: find a better way to highlight the button
-        val scale = if (mTextEditingOn) 1.25f else 1f
+        val scale = if (textEditingOn) 1.25f else 1f
         v.scaleX = scale
         v.scaleY = scale
         // Update focusability on inactive cells first, then the active one.
         // This avoids weird cascading focus transitions.
-        for (cellView in mCellView) {
-            if (cellView != activeCellView) {
-                cellView.enableTextEditing(mTextEditingOn)
+        cellView.forEach {
+            if (it != activeCellView) {
+                it.enableTextEditing(textEditingOn)
             }
         }
-        activeCellView.enableTextEditing(mTextEditingOn)
-        if (mTextEditingOn) {
+        activeCellView.enableTextEditing(textEditingOn)
+        if (textEditingOn) {
             activeCellView.startEditing()
         }
     }
@@ -489,9 +471,7 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
         if (mustRequestStorageAccess(SHARE_REQUEST_CODE)) {
             return
         }
-
         val file = Util.getTimestampedImageFile(cacheDir, SHARE_DIRECTORY, SHARE_PREFIX) ?: return
-
         Util.saveBitmap(file, createSnapshot(), JPEG_QUALITY)
         Util.addExif(file)
 
@@ -511,10 +491,10 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
     }
 
     private fun mustRequestStorageAccess(requestCode: Int): Boolean {
-        if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+        if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                == PackageManager.PERMISSION_GRANTED) {
             return false
         }
-
         ActivityCompat.requestPermissions(this,
                 arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), requestCode)
         return true
@@ -533,18 +513,17 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
 
     private fun createSnapshot(): Bitmap {
         activeCellView.highlight(false)
-        val view = findViewById<ViewGroup>(R.id.collage)
-        val bitmap = Bitmap.createBitmap(
-                view.width, view.height, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(bitmap)
-        view.draw(canvas)
+        val collage = findViewById<ViewGroup>(R.id.collage)
+        if (collage.width != collage.height) {
+            Util.reportError("Collage view is not square: ${collage.width}x${collage.height}")
+        }
+        val bitmap = Bitmap.createBitmap(collage.width, collage.height, Bitmap.Config.ARGB_8888)
+        collage.draw(Canvas(bitmap))
         activeCellView.highlight(true)
         return bitmap
     }
 
     companion object {
-
-        internal const val LOG_TAG = "ProgressPics"
 
         private const val EXPORT_DIRECTORY = "ProgressPics"
         private const val EXPORT_PREFIX = "collage"
@@ -561,8 +540,6 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
         private const val STATE_DIRECTORY = "state"
         private const val STATE_FILE = "state.bin"
 
-        internal const val AUTHORITY = "org.progresspics.android.fileprovider"
-
         private const val KEY_LAYOUT = "layout"
         private const val KEY_ACTIVE = "active"
         private const val KEY_CELL = "cell"
@@ -575,9 +552,8 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
         private const val SHARE_REQUEST_CODE = 4
         private const val SNAP_REQUEST_CODE = 5
 
-        const val JPEG_QUALITY = 85
-
-        const val CACHED_IMAGE_SIZE_LIMIT = 1024
+        internal const val AUTHORITY = "org.progresspics.android.fileprovider"
+        internal const val JPEG_QUALITY = 85
 
         private fun getCellKey(index: Int): String {
             return KEY_CELL + index
