@@ -110,14 +110,28 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
         val dialog = Dialog(this)
         val content = LayoutPicker.inflate(this,
                 object: LayoutPicker.Listener {
-                    override fun onItemClicked(cellsPerRow: IntArray) {
+                    override fun onLayoutPicked(cellsPerRow: IntArray) {
                         changeLayout(cellsPerRow)
+                        dialog.dismiss()
+                    }
+
+                    override fun onMagicButtonClicked() {
+                        changeLayout(findBestLayout())
                         dialog.dismiss()
                     }
                 })
         dialog.addContentView(content, ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
         dialog.show()
+    }
+
+    private fun findBestLayout(): IntArray {
+        var count = cellData.size
+        // Ignore completely blank cells except for the very first one
+        while (count > 1 && cellData[count - 1] == null && cellText[count - 1] == null) {
+            count--
+        }
+        return LayoutPicker.findBestLayout(resources, count)
     }
 
     fun changeLayout(cellsPerRow: IntArray) {

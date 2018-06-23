@@ -13,7 +13,8 @@ import java.util.Arrays
 object LayoutPicker {
 
     interface Listener {
-        fun onItemClicked(cellsPerRow: IntArray)
+        fun onLayoutPicked(cellsPerRow: IntArray)
+        fun onMagicButtonClicked()
     }
 
     private fun getDescriptors(resources: Resources): Array<String> {
@@ -49,19 +50,33 @@ object LayoutPicker {
         : RecyclerView.Adapter<ViewHolder>() {
 
         override fun getItemCount(): Int {
-            return descriptors.size
+            return descriptors.size + 1 // Extra item for magic button
+        }
+
+        override fun getItemViewType(position: Int): Int {
+            return if (position < descriptors.size ) TYPE_GRID else TYPE_BUTTON
         }
 
         @SuppressLint("InflateParams")
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-            return ViewHolder(LayoutInflater.from(parent.context).inflate(
-                    R.layout.layout_sample_grid, null))
+            val inflater = LayoutInflater.from(parent.context)
+            return when (viewType) {
+                TYPE_GRID -> GridViewHolder(inflater.inflate(R.layout.layout_sample_grid, null))
+                TYPE_BUTTON -> ButtonViewHolder(inflater.inflate(R.layout.layout_magic_button, null))
+                else -> throw Error("Unknown view type $viewType")
+            }
         }
 
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-            val cellsPerRow = parseLayoutDescriptor(descriptors[position])
+            when (holder) {
+                is GridViewHolder -> bindGridSample(holder,
+                        parseLayoutDescriptor(descriptors[position]))
+                is ButtonViewHolder -> bindMagicButton(holder)
+            }
+        }
 
-            holder.itemView.setOnClickListener { listener.onItemClicked(cellsPerRow) }
+        private fun bindGridSample(holder: GridViewHolder, cellsPerRow: IntArray) {
+            holder.itemView.setOnClickListener { listener.onLayoutPicked(cellsPerRow) }
 
             val grid = (holder.itemView as ViewGroup).getChildAt(0) as ViewGroup
 
@@ -76,10 +91,25 @@ object LayoutPicker {
                 }
             }
         }
+
+        private fun bindMagicButton(holder: ViewHolder) {
+            holder.itemView.setOnClickListener { listener.onMagicButtonClicked() }
+        }
+
+        companion object {
+            private const val TYPE_GRID = 0
+            private const val TYPE_BUTTON = 1
+        }
     }
 
-    private class ViewHolder internal constructor(itemView: View)
+    private open class ViewHolder internal constructor(itemView: View)
         : RecyclerView.ViewHolder(itemView)
+
+    private class GridViewHolder internal constructor(itemView: View)
+        : ViewHolder(itemView)
+
+    private class ButtonViewHolder internal constructor(itemView: View)
+        : ViewHolder(itemView)
 
     private fun parseLayoutDescriptor(descriptor: String): IntArray {
         val dimensions = descriptor.split("x".toRegex()).toTypedArray()
