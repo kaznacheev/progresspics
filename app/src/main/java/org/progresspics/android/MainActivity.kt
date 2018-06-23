@@ -27,6 +27,7 @@ import java.util.Comparator
 import java.util.HashSet
 
 import android.support.v4.content.FileProvider.getUriForFile
+import android.widget.Toast
 
 class MainActivity : AppCompatActivity(), CellView.Listener {
 
@@ -458,6 +459,8 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
         Util.saveBitmap(file, createSnapshot(), JPEG_QUALITY)
         Util.addExif(file)
         publishImage(getUriForFile(this, AUTHORITY, file))
+        val text = "Saved ${file.name}\nunder ${Environment.DIRECTORY_PICTURES}/$EXPORT_DIRECTORY"
+        Toast.makeText(this, text, Toast.LENGTH_LONG).show();
     }
 
     private fun share() {
