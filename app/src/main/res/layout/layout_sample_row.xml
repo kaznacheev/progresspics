@@ -9,5 +9,6 @@
     <include layout="@layout/layout_sample_cell"/>
     <include layout="@layout/layout_sample_cell"/>
     <include layout="@layout/layout_sample_cell"/>
+    <include layout="@layout/layout_sample_cell"/>
 
 </LinearLayout>

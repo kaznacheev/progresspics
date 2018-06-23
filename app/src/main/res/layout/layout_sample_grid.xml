@@ -15,6 +15,7 @@
         <include layout="@layout/layout_sample_row"/>
         <include layout="@layout/layout_sample_row"/>
         <include layout="@layout/layout_sample_row"/>
+        <include layout="@layout/layout_sample_row"/>
 
     </org.progresspics.android.TouchTransparentLinearLayout>
 
