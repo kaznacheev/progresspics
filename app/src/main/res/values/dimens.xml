@@ -12,10 +12,10 @@
     <dimen name="overlay_padding_horiz">8dp</dimen>
     <dimen name="overlay_padding_vert">4dp</dimen>
     <dimen name="overlayTextSize">16sp</dimen>
-    <dimen name="tools_margin">24dp</dimen>
+    <dimen name="tools_margin">12dp</dimen>
     <dimen name="layout_picker_padding">8dp</dimen>
     <dimen name="layout_picker_stroke">1dp</dimen>
     <dimen name="layout_picker_item_margin">8dp</dimen>
     <dimen name="layout_picker_item_size">48dp</dimen>
-    <dimen name="button_size">42dp</dimen>
+    <dimen name="button_size">48dp</dimen>
 </resources>

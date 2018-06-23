@@ -70,19 +70,10 @@
             <include layout="@layout/tools2"/>
         </LinearLayout>
 
-        <include layout="@layout/space"/>
-
-        <LinearLayout
-            android:id="@+id/tools3"
-            android:layout_marginStart="@dimen/tools_margin"
-            android:layout_marginEnd="@dimen/tools_margin"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
-            <include layout="@layout/tools3"/>
-        </LinearLayout>
-
-        <include layout="@layout/space"/>
+        <Space xmlns:android="http://schemas.android.com/apk/res/android"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="2"/>
 
     </LinearLayout>
 

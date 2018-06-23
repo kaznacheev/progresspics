@@ -34,4 +34,10 @@
             android:layout_height="@dimen/button_size"
             android:scaleX="-1"
             app:srcCompat="@drawable/ic_menu_fill" />
+        <include layout="@layout/space" />
+        <ImageButton
+            android:id="@+id/button_layout"
+            android:layout_width="@dimen/button_size"
+            android:layout_height="@dimen/button_size"
+            app:srcCompat="@drawable/ic_menu_grid" />
 </merge>
