@@ -92,7 +92,7 @@ object LayoutPicker {
             }
         }
 
-        private fun bindMagicButton(holder: ViewHolder) {
+        private fun bindMagicButton(holder: ButtonViewHolder) {
             holder.itemView.setOnClickListener { listener.onMagicButtonClicked() }
         }
 
