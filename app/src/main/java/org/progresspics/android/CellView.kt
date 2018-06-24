@@ -94,14 +94,9 @@ class CellView : View {
             } else if (pinchInProgress && ev.pointerCount == 2) {
                 val x1 = ev.getX(1)
                 val y1 = ev.getY(1)
-
                 val distOnDown = distance(downX0, downY0, downX1, downY1)
                 val distCurrent = distance(x0, y0, x1, y1)
-                pinchScale = if (distOnDown > 1) {
-                    distCurrent / distOnDown
-                } else {
-                    1f
-                }
+                pinchScale = if (distOnDown > 1) distCurrent / distOnDown else 1f
                 invalidate()
             }
 
