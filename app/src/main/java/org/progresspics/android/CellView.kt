@@ -81,7 +81,7 @@ class CellView : View {
                     }
                     if (ev.pointerCount == 2) {
                         downX1 = ev.getX(1)
-                        downY1 = ev.getX(1)
+                        downY1 = ev.getY(1)
                         pinchInProgress = true
                         pinchScale = 1f
                     }
@@ -93,7 +93,7 @@ class CellView : View {
                 invalidate()
             } else if (pinchInProgress && ev.pointerCount == 2) {
                 val x1 = ev.getX(1)
-                val y1 = ev.getX(1)
+                val y1 = ev.getY(1)
 
                 val distOnDown = distance(downX0, downY0, downX1, downY1)
                 val distCurrent = distance(x0, y0, x1, y1)
