@@ -387,7 +387,7 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
             val cell = CellData.fromUri(uri, cacheFile, this) ?: continue
             cells.add(cell)
         }
-        cells.sortWith(Comparator { p0, p1 -> p0.dateTime.compareTo(p1.dateTime) })
+        cells.sortWith(Comparator { p0, p1 -> p0.timestamp.compareTo(p1.timestamp) })
         return cells
     }
 
@@ -430,7 +430,7 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
                 cellData == null -> ""
                 allDatesSame -> cellData.time
                 allDatesDifferent -> cellData.date
-                else -> cellData.dateTime
+                else -> "${cellData.date} ${cellData.time}"
             }
             it.timestampView.text = cellTimestamp
             it.timestampView.visibility = if (cellTimestamp.isEmpty()) View.GONE else View.VISIBLE

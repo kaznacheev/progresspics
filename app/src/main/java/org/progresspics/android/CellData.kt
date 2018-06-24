@@ -8,14 +8,16 @@ import android.graphics.Point
 import android.net.Uri
 import android.os.BaseBundle
 import android.support.media.ExifInterface
-import android.util.Log
 
 import java.io.File
 
 import android.support.v4.content.FileProvider.getUriForFile
 
-class CellData private constructor(private val mUri: Uri, val bitmap: Bitmap, val date: String,
-                                            val time: String) {
+class CellData private constructor(
+        private val mUri: Uri, val bitmap: Bitmap, val timestamp: String) {
+
+    var date: String
+    var time: String
 
     var pivotX: Int = 0
         private set
@@ -29,10 +31,15 @@ class CellData private constructor(private val mUri: Uri, val bitmap: Bitmap, va
     val rotationInDegrees: Int
         get() = rotation * 90
 
-    val dateTime: String
-        get() = "$date $time"
-
     init {
+        val tokens = timestamp.split(" ".toRegex()).toTypedArray()
+        if (tokens.size == 2) {
+            date = tokens[0].replace(':', '/')
+            time = tokens[1].substring(0, 5)
+        } else {
+            date = ""
+            time = ""
+        }
         resetPivot()
     }
 
@@ -101,15 +108,13 @@ class CellData private constructor(private val mUri: Uri, val bitmap: Bitmap, va
 
     fun save(b: BaseBundle) {
         b.putString(KEY_URI, mUri.toString())
-        b.putString(KEY_DATE, date)
-        b.putString(KEY_TIME, time)
+        b.putString(KEY_TIMESTAMP, timestamp)
         saveViewport(b)
     }
 
     companion object {
         private const val KEY_URI = "uri"
-        private const val KEY_DATE = "date"
-        private const val KEY_TIME = "time"
+        private const val KEY_TIMESTAMP = "timestamp"
         private const val KEY_PIVOT_X = "pivot_x"
         private const val KEY_PIVOT_Y = "pivot_y"
         private const val KEY_SCALE = "scale"
@@ -119,13 +124,12 @@ class CellData private constructor(private val mUri: Uri, val bitmap: Bitmap, va
 
         fun fromBundle(b: BaseBundle, resolver: ContentResolver): CellData? {
             val uriString = b.getString(KEY_URI) ?: return null
-            val date = b.getString(KEY_DATE) ?: return null
-            val time = b.getString(KEY_TIME) ?: return null
+            val timestamp = b.getString(KEY_TIMESTAMP) ?: return null
             try {
                 val uri = Uri.parse(uriString)
                 val bitmap = BitmapFactory.decodeStream(resolver.openInputStream(uri))
                         ?: return null
-                val cellData = CellData(uri, bitmap, date, time)
+                val cellData = CellData(uri, bitmap, timestamp)
                 cellData.restoreViewport(b)
                 return cellData
             } catch (ignore: Exception) {
@@ -165,19 +169,9 @@ class CellData private constructor(private val mUri: Uri, val bitmap: Bitmap, va
                     Util.reportWarning("No timestamp found in $source")
                     timestamp = Util.exifTimestamp
                 }
-                val date: String
-                val time: String
-                val tokens = timestamp.split(" ".toRegex()).toTypedArray()
-                if (tokens.size == 2) {
-                    date = tokens[0].replace(':', '/')
-                    time = tokens[1].substring(0, 5)
-                } else {
-                    date = ""
-                    time = ""
-                }
 
                 return CellData(
-                        getUriForFile(context, MainActivity.AUTHORITY, cache), bitmap, date, time)
+                        getUriForFile(context, MainActivity.AUTHORITY, cache), bitmap, timestamp)
             } catch (e: Exception) {
                 Util.reportException(e)
                 return null
