@@ -2,4 +2,6 @@
     <string name="app_name">ProgressPics</string>
     <string name="layout_pattern">{0}x{1}</string>
     <string name="layout_picker_title">Pick the layout</string>
+    <string name="help_dialog_title">Help</string>
+    <string name="help_dialog_message">Help is on the way</string>
 </resources>

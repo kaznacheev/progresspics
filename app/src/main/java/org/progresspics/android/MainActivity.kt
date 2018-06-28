@@ -27,6 +27,7 @@ import java.util.Comparator
 import java.util.HashSet
 
 import android.support.v4.content.FileProvider.getUriForFile
+import android.support.v7.app.AlertDialog
 import android.widget.Toast
 
 class MainActivity : AppCompatActivity(), CellView.Listener {
@@ -529,6 +530,14 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
         collage.draw(Canvas(bitmap))
         activeCellView.highlight(true)
         return bitmap
+    }
+
+    public fun help(view: View) {
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle(getString(R.string.help_dialog_title))
+        builder.setMessage(getString(R.string.help_dialog_message))
+        builder.setPositiveButton(android.R.string.ok, null)
+        builder.create().show()
     }
 
     companion object {
