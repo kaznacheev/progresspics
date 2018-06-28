@@ -161,10 +161,7 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
     }
 
     private fun setupCellLayout() {
-        if (textEditingOn) {
-            // Emulate the toggle.
-            text(findViewById(R.id.button_text))
-        }
+        exitTextEditingMode()
 
         if (activeCellIndex < cellView.size) {
             activeCellView.highlight(false)
@@ -464,6 +461,13 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
         }
     }
 
+    private fun exitTextEditingMode() {
+        if (textEditingOn) {
+            // Emulate the toggle.
+            text(findViewById(R.id.button_text))
+        }
+    }
+
     private fun save() {
         if (mustRequestStorageAccess(SAVE_REQUEST_CODE)) {
             return
@@ -522,6 +526,7 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
     }
 
     private fun createSnapshot(): Bitmap {
+        exitTextEditingMode()
         activeCellView.highlight(false)
         val collage = findViewById<ViewGroup>(R.id.collage)
         if (collage.width != collage.height) {
