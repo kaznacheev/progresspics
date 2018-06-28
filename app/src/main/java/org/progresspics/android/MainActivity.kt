@@ -53,21 +53,6 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        findViewById<View>(R.id.button_clear).setOnClickListener { clearAll() }
-        findViewById<View>(R.id.button_snap).setOnClickListener { snap() }
-        findViewById<View>(R.id.button_pick).setOnClickListener { pick() }
-        findViewById<View>(R.id.button_save).setOnClickListener { save() }
-        findViewById<View>(R.id.button_share).setOnClickListener { share() }
-
-        findViewById<View>(R.id.button_erase).setOnClickListener { clearActive() }
-        findViewById<View>(R.id.button_rotate_left).setOnClickListener { rotate(1) }
-        findViewById<View>(R.id.button_rotate_right).setOnClickListener { rotate(-1) }
-        findViewById<View>(R.id.button_text).setOnClickListener { text(it) }
-        findViewById<View>(R.id.button_layout).setOnClickListener { pickLayout() }
-
-        findViewById<View>(R.id.button_fit).setOnClickListener { fitCell() }
-        findViewById<View>(R.id.button_fill).setOnClickListener { fillCell() }
-
         gridView = findViewById(R.id.grid)
         dateView = findViewById(R.id.date)
 
@@ -106,7 +91,7 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
         setupCellLayout()
     }
 
-    private fun pickLayout() {
+    public fun pickLayout(view: View) {
         val dialog = Dialog(this)
         val content = LayoutPicker.inflate(this,
                 object: LayoutPicker.Listener {
@@ -278,7 +263,7 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
         saveStateToFile()
     }
 
-    private fun clearAll() {
+    public fun clearAll(view: View) {
         cellData.clear()
         cellText.clear()
         cellView.forEach {
@@ -298,7 +283,7 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
         }
     }
 
-    private fun clearActive() {
+    public fun clearActive(view: View) {
         cellData[activeCellIndex] = null
         cellText[activeCellIndex] = null
         activeCellView.update(null, null)
@@ -306,12 +291,20 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
         updateTimestampDisplay()
     }
 
+    public fun rotateLeft(view: View) {
+        rotate(-1)
+    }
+
+    public fun rotateRight(view: View) {
+        rotate(1)
+    }
+
     private fun rotate(direction: Int) {
         activeCellView.rotate(direction)
         saveStateToFile()
     }
 
-    private fun snap() {
+    public fun snap(view: View) {
         if (mustRequestStorageAccess(SNAP_REQUEST_CODE)) {
             return
         }
@@ -332,7 +325,7 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
         }
     }
 
-    private fun pick() {
+    public fun pick(view: View) {
         val intent = Intent(Intent.ACTION_PICK,
                 MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
         intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
@@ -468,7 +461,7 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
         }
     }
 
-    private fun save() {
+    public fun save(view: View) {
         if (mustRequestStorageAccess(SAVE_REQUEST_CODE)) {
             return
         }
@@ -481,7 +474,7 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
         Toast.makeText(this, text, Toast.LENGTH_LONG).show();
     }
 
-    private fun share() {
+    public fun share(view: View) {
         if (mustRequestStorageAccess(SHARE_REQUEST_CODE)) {
             return
         }
@@ -496,11 +489,11 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
         startActivity(Intent.createChooser(shareIntent, "Share to"))
     }
 
-    private fun fitCell() {
+    public fun fitCell(view: View) {
         activeCellView.scaleToFit()
     }
 
-    private fun fillCell() {
+    public fun fillCell(view: View) {
         activeCellView.scaleToFill()
     }
 
@@ -518,9 +511,9 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             when (requestCode) {
-                SAVE_REQUEST_CODE -> save()
-                SHARE_REQUEST_CODE -> share()
-                SNAP_REQUEST_CODE -> snap()
+                SAVE_REQUEST_CODE -> save(findViewById(R.id.button_save))
+                SHARE_REQUEST_CODE -> share(findViewById(R.id.button_share))
+                SNAP_REQUEST_CODE -> snap(findViewById(R.id.button_snap))
             }
         }
     }
