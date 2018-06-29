@@ -28,6 +28,7 @@ import java.util.HashSet
 
 import android.support.v4.content.FileProvider.getUriForFile
 import android.support.v7.app.AlertDialog
+import android.support.v7.widget.TooltipCompat
 import android.widget.Toast
 
 class MainActivity : AppCompatActivity(), CellView.Listener {
@@ -53,6 +54,8 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        addTooltips(findViewById(R.id.tools))
 
         gridView = findViewById(R.id.grid)
         dateView = findViewById(R.id.date)
@@ -556,6 +559,18 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
             cellText.removeAt(lastIndex)
         }
         updateCells(activeCellIndex)
+    }
+
+    private fun addTooltips(view: View) {
+        val contentDescription = view.contentDescription
+        if (contentDescription != null && !contentDescription.isEmpty()) {
+            TooltipCompat.setTooltipText(view, contentDescription)
+        }
+        if (view is ViewGroup) {
+            for (c in 0 until view.childCount) {
+                addTooltips(view.getChildAt(c))
+            }
+       }
     }
 
     companion object {

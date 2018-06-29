@@ -3,5 +3,20 @@
     <string name="layout_pattern">{0}x{1}</string>
     <string name="layout_picker_title">Pick the layout</string>
     <string name="help_dialog_title">Help</string>
-    <string name="help_dialog_message">Help is on the way</string>
+    <string name="help_dialog_message">Long-press on buttons to see tooltips</string>
+    <string name="content_descr_clear_all">Discard the collage</string>
+    <string name="content_descr_text">Add/Edit text</string>
+    <string name="content_descr_snap">Take a picture</string>
+    <string name="content_descr_pick">Pick from gallery</string>
+    <string name="content_descr_save">Save to a file</string>
+    <string name="content_descr_share">Share</string>
+    <string name="content_descr_clear_active">Discard selected</string>
+    <string name="content_descr_rotate_left">Rotate counterclockwise</string>
+    <string name="content_descr_rotate_right">Rotate clockwise</string>
+    <string name="content_descr_fit_cell">Fit frame</string>
+    <string name="content_descr_fill_cell">Fill frame</string>
+    <string name="content_descr_pick_layout">Pick layout</string>
+    <string name="content_descr_remove">Remove selected and collapse</string>
+    <string name="content_descr_insert">Insert blank before selected</string>
+    <string name="content_descr_help">Display help</string>
 </resources>

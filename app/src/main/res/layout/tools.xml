@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/tools"
     android:layout_width="wrap_content"
     android:layout_height="match_parent"
     android:orientation="vertical">
@@ -18,6 +19,7 @@
                     android:layout_marginStart="@dimen/tool_margin"
                     android:layout_marginEnd="@dimen/tool_margin"
                     android:onClick="clearAll"
+                    android:contentDescription="@string/content_descr_clear_all"
                     app:srcCompat="@android:drawable/ic_menu_delete" />
 
                 <ImageButton
@@ -27,6 +29,7 @@
                     android:layout_marginStart="@dimen/tool_margin"
                     android:layout_marginEnd="@dimen/tool_margin"
                     android:onClick="text"
+                    android:contentDescription="@string/content_descr_text"
                     app:srcCompat="@android:drawable/ic_menu_edit" />
 
                 <ImageButton
@@ -36,6 +39,7 @@
                     android:layout_marginStart="@dimen/tool_margin"
                     android:layout_marginEnd="@dimen/tool_margin"
                     android:onClick="snap"
+                    android:contentDescription="@string/content_descr_snap"
                     app:srcCompat="@android:drawable/ic_menu_camera" />
 
                 <ImageButton
@@ -45,6 +49,7 @@
                     android:layout_marginStart="@dimen/tool_margin"
                     android:layout_marginEnd="@dimen/tool_margin"
                     android:onClick="pick"
+                    android:contentDescription="@string/content_descr_pick"
                     app:srcCompat="@android:drawable/ic_menu_gallery" />
 
                 <ImageButton
@@ -54,6 +59,7 @@
                     android:layout_marginStart="@dimen/tool_margin"
                     android:layout_marginEnd="@dimen/tool_margin"
                     android:onClick="save"
+                    android:contentDescription="@string/content_descr_save"
                     app:srcCompat="@android:drawable/ic_menu_save" />
 
                 <ImageButton
@@ -63,6 +69,7 @@
                     android:layout_marginStart="@dimen/tool_margin"
                     android:layout_marginEnd="@dimen/tool_margin"
                     android:onClick="share"
+                    android:contentDescription="@string/content_descr_share"
                     app:srcCompat="@android:drawable/ic_menu_share" />
         </LinearLayout>
 
@@ -79,6 +86,7 @@
                     android:layout_marginStart="@dimen/tool_margin"
                     android:layout_marginEnd="@dimen/tool_margin"
                     android:onClick="clearActive"
+                    android:contentDescription="@string/content_descr_clear_active"
                     app:srcCompat="@android:drawable/ic_menu_revert" />
 
                 <ImageButton
@@ -89,6 +97,7 @@
                     android:layout_marginEnd="@dimen/tool_margin"
                     android:scaleX="1"
                     android:onClick="rotateLeft"
+                    android:contentDescription="@string/content_descr_rotate_left"
                     app:srcCompat="@android:drawable/ic_menu_rotate" />
 
                 <ImageButton
@@ -99,6 +108,7 @@
                     android:layout_marginEnd="@dimen/tool_margin"
                     android:scaleX="-1"
                     android:onClick="rotateRight"
+                    android:contentDescription="@string/content_descr_rotate_right"
                     app:srcCompat="@android:drawable/ic_menu_rotate" />
 
                 <ImageButton
@@ -108,6 +118,7 @@
                     android:layout_marginStart="@dimen/tool_margin"
                     android:layout_marginEnd="@dimen/tool_margin"
                     android:onClick="fillCell"
+                    android:contentDescription="@string/content_descr_fill_cell"
                     app:srcCompat="@drawable/ic_menu_fit" />
 
                 <ImageButton
@@ -117,6 +128,7 @@
                     android:layout_marginStart="@dimen/tool_margin"
                     android:layout_marginEnd="@dimen/tool_margin"
                     android:onClick="fitCell"
+                    android:contentDescription="@string/content_descr_fit_cell"
                     app:srcCompat="@drawable/ic_menu_fill" />
 
                 <ImageButton
@@ -126,6 +138,7 @@
                     android:layout_marginStart="@dimen/tool_margin"
                     android:layout_marginEnd="@dimen/tool_margin"
                     android:onClick="pickLayout"
+                    android:contentDescription="@string/content_descr_pick_layout"
                     app:srcCompat="@drawable/ic_menu_grid" />
 
         </LinearLayout>
@@ -143,15 +156,17 @@
                     android:layout_marginStart="@dimen/tool_margin"
                     android:layout_marginEnd="@dimen/tool_margin"
                     android:onClick="removeActive"
+                    android:contentDescription="@string/content_descr_remove"
                     app:srcCompat="@android:drawable/ic_menu_close_clear_cancel" />
 
                 <ImageButton
-                    android:id="@+id/button_add"
+                    android:id="@+id/button_insert"
                     android:layout_width="@dimen/button_size"
                     android:layout_height="@dimen/button_size"
                     android:layout_marginStart="@dimen/tool_margin"
                     android:layout_marginEnd="@dimen/tool_margin"
                     android:onClick="insertBeforeActive"
+                    android:contentDescription="@string/content_descr_insert"
                     app:srcCompat="@android:drawable/ic_menu_add" />
 
                 <include layout="@layout/space"/>
@@ -163,6 +178,7 @@
                     android:layout_marginStart="@dimen/tool_margin"
                     android:layout_marginEnd="@dimen/tool_margin"
                     android:onClick="help"
+                    android:contentDescription="@string/content_descr_help"
                     app:srcCompat="@android:drawable/ic_menu_help" />
 
         </LinearLayout>
