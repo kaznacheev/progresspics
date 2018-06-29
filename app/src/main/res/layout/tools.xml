@@ -169,6 +169,16 @@
                     android:contentDescription="@string/content_descr_insert"
                     app:srcCompat="@android:drawable/ic_menu_add" />
 
+                <ImageButton
+                    android:id="@+id/button_guidelines"
+                    android:layout_width="@dimen/button_size"
+                    android:layout_height="@dimen/button_size"
+                    android:layout_marginStart="@dimen/tool_margin"
+                    android:layout_marginEnd="@dimen/tool_margin"
+                    android:onClick="guidelines"
+                    android:contentDescription="@string/content_descr_guidelines"
+                    app:srcCompat="@drawable/ic_menu_guidelines" />
+
                 <include layout="@layout/space"/>
 
                 <ImageButton

@@ -47,6 +47,7 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
 
     private var captureUri: Uri? = null
     private var textEditingOn: Boolean = false  // Not persistable on purpose.
+    private var guidelinesOn: Boolean = false // Not persistable as well.
 
     private val activeCellView: CellView
         get() = cellView[activeCellIndex]
@@ -147,6 +148,10 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
     override fun onCellTextUpdate(index: Int, text: String) {
         cellText[index] = text
         saveStateToFile()
+    }
+
+    override fun areGuidelinesOn(): Boolean {
+        return guidelinesOn
     }
 
     private fun setupCellLayout() {
@@ -442,9 +447,7 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
     fun text(v: View) {
         textEditingOn = !textEditingOn
         // TODO: find a better way to highlight the button
-        val scale = if (textEditingOn) 1.25f else 1f
-        v.scaleX = scale
-        v.scaleY = scale
+        highlightButton(v, textEditingOn)
         // Update focusability on inactive cells first, then the active one.
         // This avoids weird cascading focus transitions.
         cellView.forEach {
@@ -456,6 +459,12 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
         if (textEditingOn) {
             activeCellView.startEditing()
         }
+    }
+
+    private fun highlightButton(v: View, on: Boolean) {
+        val scale = if (on) 1.25f else 1f
+        v.scaleX = scale
+        v.scaleY = scale
     }
 
     private fun exitTextEditingMode() {
@@ -524,6 +533,7 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
 
     private fun createSnapshot(): Bitmap {
         exitTextEditingMode()
+        hideGuidelines()
         activeCellView.highlight(false)
         val collage = findViewById<ViewGroup>(R.id.collage)
         if (collage.width != collage.height) {
@@ -534,7 +544,6 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
         activeCellView.highlight(true)
         return bitmap
     }
-
     public fun help(view: View) {
         val builder = AlertDialog.Builder(this)
         builder.setTitle(getString(R.string.help_dialog_title))
@@ -559,6 +568,21 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
             cellText.removeAt(lastIndex)
         }
         updateCells(activeCellIndex)
+    }
+
+    public fun guidelines(view: View) {
+        guidelinesOn = !guidelinesOn
+        highlightButton(view, guidelinesOn)
+        for (v in cellView) {
+            v.invalidate()
+        }
+    }
+
+    private fun hideGuidelines() {
+        if (guidelinesOn) {
+            // Emulate the toggle.
+            guidelines(findViewById(R.id.button_guidelines))
+        }
     }
 
     private fun addTooltips(view: View) {

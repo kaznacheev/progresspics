@@ -15,6 +15,7 @@ class CellView : View {
 
     private val marginPaint = Paint()
     private val blankPaint = Paint()
+    private val guidePaint = Paint()
 
     private val tempRect = Rect()
 
@@ -43,6 +44,7 @@ class CellView : View {
         fun onCellActivate(index: Int)
         fun onCellViewportUpdate(index: Int)
         fun onCellTextUpdate(index: Int, text: String)
+        fun areGuidelinesOn(): Boolean
     }
 
     constructor(context: Context) : super(context)
@@ -141,6 +143,10 @@ class CellView : View {
 
         blankPaint.style = Paint.Style.FILL
         blankPaint.color = resources.getColor(R.color.colorBlankCell, null)
+
+        guidePaint.style = Paint.Style.STROKE
+        guidePaint.strokeWidth = 1f
+        guidePaint.color = resources.getColor(R.color.colorGuideline, null)
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -164,6 +170,16 @@ class CellView : View {
                 (viewPivotX - (data.pivotX + dragOffset.x)).toFloat(),
                 (viewPivotY - (data.pivotY + dragOffset.y)).toFloat(), null)
         canvas.restore()
+
+        if (listener != null && listener!!.areGuidelinesOn()) {
+            val guidelinesStep = resources.getDimensionPixelSize(R.dimen.guideline_step)
+            for (x in guidelinesStep until width step guidelinesStep) {
+                canvas.drawLine(x.toFloat(), 0f, x.toFloat(), height.toFloat(), guidePaint);
+            }
+            for (y in guidelinesStep until height step guidelinesStep) {
+                canvas.drawLine(0f, y.toFloat(), width.toFloat(), y.toFloat(), guidePaint);
+            }
+        }
     }
 
     fun bind(index: Int, listener: Listener?) {
