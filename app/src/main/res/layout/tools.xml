@@ -12,7 +12,7 @@
             android:orientation="horizontal">
 
                 <ImageButton
-                    android:id="@+id/button_clear"
+                    android:id="@+id/button_clear_all"
                     android:layout_width="@dimen/button_size"
                     android:layout_height="@dimen/button_size"
                     android:layout_marginStart="@dimen/tool_margin"
@@ -73,13 +73,13 @@
             android:orientation="horizontal">
 
                 <ImageButton
-                    android:id="@+id/button_erase"
+                    android:id="@+id/button_clear_active"
                     android:layout_width="@dimen/button_size"
                     android:layout_height="@dimen/button_size"
                     android:layout_marginStart="@dimen/tool_margin"
                     android:layout_marginEnd="@dimen/tool_margin"
                     android:onClick="clearActive"
-                    app:srcCompat="@android:drawable/ic_menu_close_clear_cancel" />
+                    app:srcCompat="@android:drawable/ic_menu_revert" />
 
                 <ImageButton
                     android:id="@+id/button_rotate_left"
@@ -102,7 +102,7 @@
                     app:srcCompat="@android:drawable/ic_menu_rotate" />
 
                 <ImageButton
-                    android:id="@+id/button_fit"
+                    android:id="@+id/button_fit_cell"
                     android:layout_width="@dimen/button_size"
                     android:layout_height="@dimen/button_size"
                     android:layout_marginStart="@dimen/tool_margin"
@@ -111,7 +111,7 @@
                     app:srcCompat="@drawable/ic_menu_fit" />
 
                 <ImageButton
-                    android:id="@+id/button_fill"
+                    android:id="@+id/button_fill_cell"
                     android:layout_width="@dimen/button_size"
                     android:layout_height="@dimen/button_size"
                     android:layout_marginStart="@dimen/tool_margin"
@@ -120,7 +120,7 @@
                     app:srcCompat="@drawable/ic_menu_fill" />
 
                 <ImageButton
-                    android:id="@+id/button_layout"
+                    android:id="@+id/button_pick_layout"
                     android:layout_width="@dimen/button_size"
                     android:layout_height="@dimen/button_size"
                     android:layout_marginStart="@dimen/tool_margin"
@@ -132,9 +132,29 @@
 
         <include layout="@layout/space"/>
 
-        <LinearLayout android:layout_width="wrap_content"
+        <LinearLayout android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal">
+
+                <ImageButton
+                    android:id="@+id/button_remove"
+                    android:layout_width="@dimen/button_size"
+                    android:layout_height="@dimen/button_size"
+                    android:layout_marginStart="@dimen/tool_margin"
+                    android:layout_marginEnd="@dimen/tool_margin"
+                    android:onClick="removeActive"
+                    app:srcCompat="@android:drawable/ic_menu_close_clear_cancel" />
+
+                <ImageButton
+                    android:id="@+id/button_add"
+                    android:layout_width="@dimen/button_size"
+                    android:layout_height="@dimen/button_size"
+                    android:layout_marginStart="@dimen/tool_margin"
+                    android:layout_marginEnd="@dimen/tool_margin"
+                    android:onClick="insertBeforeActive"
+                    app:srcCompat="@android:drawable/ic_menu_add" />
+
+                <include layout="@layout/space"/>
 
                 <ImageButton
                     android:id="@+id/button_help"

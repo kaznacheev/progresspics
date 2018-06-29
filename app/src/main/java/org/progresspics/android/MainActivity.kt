@@ -159,38 +159,28 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
         for (r in 0 until grid.childCount) {
             val activeRow = r < cellsPerRow!!.size
             val row = grid.getChildAt(r) as ViewGroup
-            if (activeRow) {
-                row.visibility = View.VISIBLE
-            } else {
-                row.visibility = View.GONE
-            }
+            row.visibility = if (activeRow) View.VISIBLE else View.GONE
 
             for (c in 0 until row.childCount) {
                 val activeColumn = activeRow && c < cellsPerRow!![r]
                 val cellWrapper = row.getChildAt(c) as ViewGroup
+                cellWrapper.visibility = if (activeColumn) View.VISIBLE else View.GONE
 
                 val view = cellWrapper.getChildAt(0) as CellView
                 if (activeColumn) {
                     val index = cellView.size
-                    if (index == cellData.size) {
-                        cellData.add(null)
-                    }
-                    if (index == cellText.size) {
-                        cellText.add(null)
-                    }
                     view.bind(index, this)
-                    view.update(cellData[index], cellText[index])
                     cellView.add(view)
-                    cellWrapper.visibility = View.VISIBLE
-                    view.isClickable = true
                 } else {
                     view.bind(-1, null)
                     view.update(null, null)
-                    cellWrapper.visibility = View.GONE
                 }
                 view.enableTextEditing(false)
             }
         }
+
+        updateCells(0)
+
         grid.requestLayout()
 
         if (activeCellIndex >= cellView.size) {
@@ -199,6 +189,16 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
         activeCellView.highlight(true)
 
         updateTimestampDisplay()
+    }
+
+    private fun updateCells(firstIndex: Int) {
+        for (i in firstIndex until cellView.size) {
+            if (i == cellData.size) {
+                cellData.add(null)
+                cellText.add(null)
+            }
+            cellView[i].update(cellData[i], cellText[i])
+        }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -540,6 +540,24 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
         builder.create().show()
     }
 
+    public fun removeActive(view: View) {
+        cellData.removeAt(activeCellIndex)
+        cellText.removeAt(activeCellIndex)
+        updateCells(activeCellIndex)
+    }
+
+    public fun insertBeforeActive(view: View) {
+        cellData.add(activeCellIndex, null)
+        cellText.add(activeCellIndex, null)
+        // cellData might be longer than cellView, keep the diff reasonable.
+        if (cellData.size >= MAX_CELL_DATA) {
+            val lastIndex = cellData.size - 1
+            cellData.removeAt(lastIndex)
+            cellText.removeAt(lastIndex)
+        }
+        updateCells(activeCellIndex)
+    }
+
     companion object {
 
         private const val EXPORT_DIRECTORY = "ProgressPics"
@@ -571,6 +589,8 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
 
         internal const val AUTHORITY = "org.progresspics.android.fileprovider"
         internal const val JPEG_QUALITY = 85
+
+        internal const val MAX_CELL_DATA = 16
 
         private fun getCellKey(index: Int): String {
             return KEY_CELL + index
