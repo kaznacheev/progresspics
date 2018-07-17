@@ -556,6 +556,8 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
         cellData.removeAt(activeCellIndex)
         cellText.removeAt(activeCellIndex)
         updateCells(activeCellIndex)
+        saveStateToFile()
+        updateTimestampDisplay()
     }
 
     public fun insertBeforeActive(view: View) {
@@ -568,6 +570,8 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
             cellText.removeAt(lastIndex)
         }
         updateCells(activeCellIndex)
+        saveStateToFile()
+        updateTimestampDisplay()
     }
 
     public fun guidelines(view: View) {
