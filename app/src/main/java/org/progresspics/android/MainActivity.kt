@@ -406,7 +406,9 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
     }
 
     private fun importImages(uris: List<Uri>) {
-        importCells(loadCells(uris))
+        val loaded = cellView.filter { it.data != null }.map {it.data!!.source}
+        val filtered = uris.filter {!loaded.contains(it)}
+        importCells(loadCells(filtered))
     }
 
     private fun importAndLayoutImages(uris: List<Uri>) {

@@ -14,7 +14,7 @@ import java.io.File
 import android.support.v4.content.FileProvider.getUriForFile
 
 class CellData private constructor(
-        private val mUri: Uri, val bitmap: Bitmap, val timestamp: String) {
+        val source: Uri, private val cache: Uri, val bitmap: Bitmap, val timestamp: String) {
 
     var date: String
     var time: String
@@ -107,13 +107,15 @@ class CellData private constructor(
     }
 
     fun save(b: BaseBundle) {
-        b.putString(KEY_URI, mUri.toString())
+        b.putString(KEY_SOURCE, source.toString())
+        b.putString(KEY_CACHE, cache.toString())
         b.putString(KEY_TIMESTAMP, timestamp)
         saveViewport(b)
     }
 
     companion object {
-        private const val KEY_URI = "uri"
+        private const val KEY_SOURCE = "source"
+        private const val KEY_CACHE = "cache"
         private const val KEY_TIMESTAMP = "timestamp"
         private const val KEY_PIVOT_X = "pivot_x"
         private const val KEY_PIVOT_Y = "pivot_y"
@@ -123,13 +125,15 @@ class CellData private constructor(
         private const val CACHED_IMAGE_SIZE_LIMIT = 1024
 
         fun fromBundle(b: BaseBundle, resolver: ContentResolver): CellData? {
-            val uriString = b.getString(KEY_URI) ?: return null
+            val sourceString = b.getString(KEY_SOURCE) ?: return null
+            val cacheString = b.getString(KEY_CACHE) ?: return null
             val timestamp = b.getString(KEY_TIMESTAMP) ?: return null
             try {
-                val uri = Uri.parse(uriString)
-                val bitmap = BitmapFactory.decodeStream(resolver.openInputStream(uri))
+                val source = Uri.parse(sourceString)
+                val cache = Uri.parse(cacheString)
+                val bitmap = BitmapFactory.decodeStream(resolver.openInputStream(cache))
                         ?: return null
-                val cellData = CellData(uri, bitmap, timestamp)
+                val cellData = CellData(source, cache, bitmap, timestamp)
                 cellData.restoreViewport(b)
                 return cellData
             } catch (ignore: Exception) {
@@ -137,7 +141,7 @@ class CellData private constructor(
             }
         }
 
-        fun fromUri(source: Uri, cache: File, context: Context): CellData? {
+        fun fromUri(source: Uri, cacheFile: File, context: Context): CellData? {
             try {
                 val resolver = context.contentResolver
 
@@ -160,7 +164,7 @@ class CellData private constructor(
                 val bitmap = BitmapFactory.decodeStream(
                         resolver.openInputStream(source), null, bmOptions) ?: return null
 
-                if (!Util.saveBitmap(cache, bitmap, MainActivity.JPEG_QUALITY)) {
+                if (!Util.saveBitmap(cacheFile, bitmap, MainActivity.JPEG_QUALITY)) {
                     return null
                 }
 
@@ -170,8 +174,8 @@ class CellData private constructor(
                     timestamp = Util.exifTimestamp
                 }
 
-                return CellData(
-                        getUriForFile(context, MainActivity.AUTHORITY, cache), bitmap, timestamp)
+                return CellData(source, getUriForFile(context, MainActivity.AUTHORITY, cacheFile),
+                        bitmap, timestamp)
             } catch (e: Exception) {
                 Util.reportException(e)
                 return null
