@@ -95,7 +95,7 @@
                     android:layout_height="@dimen/button_size"
                     android:layout_marginStart="@dimen/tool_margin"
                     android:layout_marginEnd="@dimen/tool_margin"
-                    android:scaleX="1"
+                    android:scaleX="-1"
                     android:onClick="rotateLeft"
                     android:contentDescription="@string/content_descr_rotate_left"
                     app:srcCompat="@android:drawable/ic_menu_rotate" />
@@ -106,7 +106,7 @@
                     android:layout_height="@dimen/button_size"
                     android:layout_marginStart="@dimen/tool_margin"
                     android:layout_marginEnd="@dimen/tool_margin"
-                    android:scaleX="-1"
+                    android:scaleX="1"
                     android:onClick="rotateRight"
                     android:contentDescription="@string/content_descr_rotate_right"
                     app:srcCompat="@android:drawable/ic_menu_rotate" />
