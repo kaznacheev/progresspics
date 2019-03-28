@@ -43,6 +43,16 @@
                     app:srcCompat="@android:drawable/ic_menu_gallery" />
 
                 <ImageButton
+                    android:id="@+id/button_pick_many"
+                    android:layout_width="@dimen/button_size"
+                    android:layout_height="@dimen/button_size"
+                    android:layout_marginStart="@dimen/tool_margin"
+                    android:layout_marginEnd="@dimen/tool_margin"
+                    android:onClick="pickMany"
+                    android:contentDescription="@string/content_descr_pick_many"
+                    app:srcCompat="@android:drawable/ic_menu_search" />
+
+                <ImageButton
                     android:id="@+id/button_pick_layout"
                     android:layout_width="@dimen/button_size"
                     android:layout_height="@dimen/button_size"

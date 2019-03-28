@@ -7,7 +7,8 @@
     <string name="content_descr_clear_all">Discard the collage</string>
     <string name="content_descr_text">Add/Edit text</string>
     <string name="content_descr_snap">Take a picture</string>
-    <string name="content_descr_pick">Pick from gallery</string>
+    <string name="content_descr_pick">Pick single photo from gallery</string>
+    <string name="content_descr_pick_many">Pick multiple photos from gallery</string>
     <string name="content_descr_save">Save to a file</string>
     <string name="content_descr_share">Share</string>
     <string name="content_descr_clear_active">Discard selected</string>

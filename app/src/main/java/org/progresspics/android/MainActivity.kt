@@ -338,9 +338,17 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
     }
 
     public fun pick(view: View) {
+        pickFromGalery(false)
+    }
+
+    public fun pickMany(view: View) {
+        pickFromGalery(true)
+    }
+
+    private fun pickFromGalery(multiple: Boolean) {
         val intent = Intent(Intent.ACTION_PICK,
                 MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
-        intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+        intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, multiple)
         try {
             startActivityForResult(intent, PICK_REQUEST_CODE)
         } catch (e: ActivityNotFoundException) {
