@@ -46,8 +46,11 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
     private var activeCellIndex: Int = 0
 
     private var captureUri: Uri? = null
-    private var textEditingOn: Boolean = false  // Not persistable on purpose.
-    private var guidelinesOn: Boolean = false // Not persistable as well.
+
+    // These are not persistable on purpose.
+    private var textEditingOn: Boolean = false
+    private var guidelinesOn: Boolean = false
+    private var timestampsOn: Boolean = true
 
     private val activeCellView: CellView
         get() = cellView[activeCellIndex]
@@ -434,11 +437,12 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
                 else -> "${cellData.date} ${cellData.time}"
             }
             it.timestampView.text = cellTimestamp
-            it.timestampView.visibility = if (cellTimestamp.isEmpty()) View.GONE else View.VISIBLE
+            it.timestampView.visibility =
+                    if (cellTimestamp.isEmpty() || !timestampsOn) View.GONE else View.VISIBLE
         }
 
         val dateView = dateView!!
-        if (allDatesSame) {
+        if (allDatesSame && timestampsOn) {
             dateView.visibility = View.VISIBLE
             dateView.text = uniqueDates.iterator().next()
         } else {
@@ -589,6 +593,12 @@ class MainActivity : AppCompatActivity(), CellView.Listener {
             // Emulate the toggle.
             guidelines(findViewById(R.id.button_guidelines))
         }
+    }
+
+    public fun timestamps(view: View) {
+        timestampsOn = !timestampsOn
+        highlightButton(view, !timestampsOn)
+        updateTimestampDisplay()
     }
 
     private fun addTooltips(view: View) {

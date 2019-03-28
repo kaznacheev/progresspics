@@ -20,4 +20,5 @@
     <string name="content_descr_insert">Insert blank before selected</string>
     <string name="content_descr_help">Display help</string>
     <string name="content_descr_guidelines">Toggle guidelines</string>
+    <string name="content_descr_timestamps">Toggle timestamps</string>
 </resources>
