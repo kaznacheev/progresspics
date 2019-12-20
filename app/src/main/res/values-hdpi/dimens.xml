@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <dimen name="tool_margin">4dp</dimen>
     <dimen name="button_size">44dp</dimen>
 </resources>

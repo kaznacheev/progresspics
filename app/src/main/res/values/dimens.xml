@@ -12,7 +12,6 @@
     <dimen name="overlay_padding_horiz">8dp</dimen>
     <dimen name="overlay_padding_vert">4dp</dimen>
     <dimen name="overlayTextSize">16sp</dimen>
-    <dimen name="tool_margin">4dp</dimen>
     <dimen name="layout_picker_padding">8dp</dimen>
     <dimen name="layout_picker_stroke">1dp</dimen>
     <dimen name="layout_picker_item_margin">8dp</dimen>
